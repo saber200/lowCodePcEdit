@@ -205,17 +205,21 @@ export const getComponentProperties = (type) => {
 };
 
 export const getDefaultComponentSize = (type) => {
+  const CONTAINER_WIDTH = 360; // 容器宽度
+  const DEFAULT_PADDING = 10; // 默认边距
+  const MAX_WIDTH = CONTAINER_WIDTH - DEFAULT_PADDING * 2; // 最大可用宽度
+
   switch (type) {
     case 'Button':
       return { width: 120, height: 40 };
     case 'Input':
       return { width: 200, height: 40 };
     case 'SearchBar':
-      return { width: 300, height: 45 };
+      return { width: Math.min(300, MAX_WIDTH), height: 45 };
     case 'NavBar':
-      return { width: 366, height: 45 };
+      return { width: MAX_WIDTH, height: 45 };
     case 'Card':
-      return { width: 345, height: 120 };
+      return { width: Math.min(345, MAX_WIDTH), height: 120 };
     case 'Switch':
       return { width: 60, height: 40 };
     case 'Radio':
@@ -229,15 +233,15 @@ export const getDefaultComponentSize = (type) => {
     case 'Tag':
       return { width: 70, height: 30 };
     case 'Grid':
-      return { width: 366, height: 200 };
+      return { width: MAX_WIDTH, height: 200 };
     case 'List':
-      return { width: 350, height: 240 };
+      return { width: Math.min(350, MAX_WIDTH), height: 240 };
     case 'TabBar':
-      return { width: 366, height: 50 };
+      return { width: MAX_WIDTH, height: 50 };
     case 'SwipeAction':
-      return { width: 366, height: 50 };
+      return { width: MAX_WIDTH, height: 50 };
     case 'Table':
-      return { width: 350, height: 200 };
+      return { width: Math.min(350, MAX_WIDTH), height: 200 };
     default:
       return { width: 100, height: 100 };
   }

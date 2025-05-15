@@ -44,7 +44,7 @@
   position: absolute;
   top: 35px;
   left: 50%;
-  width: 366px;
+  width: 360px;
   transform: translateX(-50%);
   min-height: calc(100% - 35px);
   height: auto;
@@ -95,7 +95,7 @@
   position: absolute;
   top: 35px;
   left: 50%;
-  width: 366px;
+  width: 360px;
   transform: translateX(-50%);
   bottom: 0;
   pointer-events: none;
@@ -130,7 +130,7 @@
   position: absolute;
   top: 35px;
   left: 50%;
-  width: 366px;
+  width: 360px;
   transform: translateX(-50%);
   min-height: calc(100% - 35px);
   display: grid;
@@ -195,7 +195,7 @@
   position: absolute;
   top: 17px;
   left: 50%;
-  width: 366px;
+  width: 360px;
   transform: translateX(-50%);
   min-height: calc(100% - 35px);
   height: auto;
@@ -270,6 +270,6 @@
 .editor-margin-guides,
 .editor-column-guides {
   right: 0;
-  width: 366px;
+  width: 360px;
   margin-right: 0;
 } 
