@@ -1,0 +1,276 @@
+/* Editor grid container */
+.editor-grid-container {
+  position: relative;
+  width: 390px;
+  min-height: 844px;
+  background-color: white;
+  overflow: visible;
+  border-radius: 44px;
+  box-shadow: 
+    0 0 0 12px #1a1a1a,
+    0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+/* Device notch */
+.editor-grid-container::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40%;
+  height: 35px;
+  background: #1a1a1a;
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+  z-index: 5;
+}
+
+/* Inner container for all content */
+.editor-inner-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: white;
+  border-radius: 32px;
+  overflow-y: hidden;
+  overflow-x: hidden;
+}
+
+/* Grid overlay */
+.editor-grid-overlay {
+  position: absolute;
+  top: 35px;
+  left: 50%;
+  width: 366px;
+  transform: translateX(-50%);
+  min-height: calc(100% - 35px);
+  pointer-events: none;
+  z-index: 1;
+  background: transparent;
+  box-sizing: border-box;
+}
+
+/* Vertical grid lines */
+.editor-grid-overlay::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: repeating-linear-gradient(
+    to right,
+    rgba(0, 0, 0, 0.05) 0px,
+    rgba(0, 0, 0, 0.05) 1px,
+    transparent 1px,
+    transparent 8px
+  );
+  pointer-events: none;
+}
+
+/* Horizontal grid lines */
+.editor-grid-overlay::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.05) 0px,
+    rgba(0, 0, 0, 0.05) 1px,
+    transparent 1px,
+    transparent 8px
+  );
+  pointer-events: none;
+}
+
+/* Main layout guides */
+.editor-layout-guides {
+  position: absolute;
+  top: 35px;
+  left: 50%;
+  width: 366px;
+  transform: translateX(-50%);
+  bottom: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Safe area indicators */
+.editor-layout-guides::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: var(--safe-area-inset-left);
+  right: var(--safe-area-inset-right);
+  bottom: var(--safe-area-inset-bottom);
+  border: 1px dashed rgba(22, 119, 255, 0.3);
+}
+
+/* Margin guides */
+.editor-margin-guides {
+  position: absolute;
+  top: 35px;
+  left: var(--spacing-md);
+  right: var(--spacing-md);
+  bottom: calc(var(--safe-area-inset-bottom) + var(--spacing-md));
+  border: 1px dashed rgba(22, 119, 255, 0.2);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Column guides */
+.editor-column-guides {
+  position: absolute;
+  top: 35px;
+  left: 50%;
+  width: 366px;
+  transform: translateX(-50%);
+  min-height: calc(100% - 35px);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-md);
+  box-sizing: border-box;
+  padding: 0 var(--spacing-md);
+  pointer-events: none;
+  z-index: 2;
+  border: 2px solid green;
+  background: rgba(0, 255, 0, 0.1);
+}
+
+.editor-column-guides > div {
+  background-color: rgba(22, 119, 255, 0.05);
+  height: 100%;
+}
+
+/* Device frame */
+.editor-device-frame {
+  position: absolute;
+  top: -12px;
+  left: -12px;
+  right: -12px;
+  bottom: -12px;
+  border-radius: 44px;
+  pointer-events: none;
+  z-index: 4;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+/* Status bar area */
+.editor-status-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--safe-area-inset-top);
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.05), transparent);
+  z-index: 3;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Time and status icons */
+.editor-status-bar::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80px;
+  height: 24px;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+}
+
+/* Editor content area */
+.editor-content {
+  position: absolute;
+  top: 35px;
+  left: 50%;
+  width: 366px;
+  transform: translateX(-50%);
+  height: calc(100% - 35px);
+  z-index: 3;
+  box-sizing: border-box;
+}
+
+/* Content wrapper */
+.editor-content-wrapper {
+  position: relative;
+  width: 390px;
+  min-height: 100%;
+  padding-bottom: 50px;
+  margin: 0 auto;
+}
+
+/* Scroll container */
+.editor-scroll-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  /* 隐藏原生滚动条 */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  pointer-events: auto;
+}
+
+/* 隐藏 Webkit 滚动条 */
+.editor-scroll-container::-webkit-scrollbar {
+  display: none;
+}
+
+/* 自定义滚动条容器 */
+.editor-scroll-container::after {
+  content: '';
+  position: fixed;
+  top: 35px;
+  right: 0;
+  width: 6px;
+  height: calc(100% - 35px);
+  background: transparent;
+  z-index: 1000;
+}
+
+/* 自定义滚动条滑块 */
+.editor-scroll-container::before {
+  content: '';
+  position: fixed;
+  top: var(--thumb-top, 35px);
+  right: 0;
+  width: 6px;
+  height: var(--thumb-height, 100px);
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.2);
+  z-index: 1001;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+
+/* 鼠标悬停时显示滚动条 */
+.editor-scroll-container:hover::before {
+  opacity: 1;
+}
+
+/* 确保其他容器不受滚动条影响 */
+.editor-grid-overlay,
+.editor-content,
+.editor-layout-guides,
+.editor-margin-guides,
+.editor-column-guides {
+  right: 0;
+  width: 366px;
+  margin-right: 0;
+} 

@@ -1,0 +1,27 @@
+:root {
+  /* Safe area insets */
+  --safe-area-inset-top: env(safe-area-inset-top, 44px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 34px);
+  --safe-area-inset-left: env(safe-area-inset-left, 0px);
+  --safe-area-inset-right: env(safe-area-inset-right, 0px);
+
+  /* Common spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+
+  /* Common colors */
+  --primary-color: #1677ff;
+  --success-color: #00b578;
+  --warning-color: #ff8f1f;
+  --danger-color: #ff3141;
+  --text-color: #333333;
+  --border-color: #e5e5e5;
+  --background-color: #f5f5f5;
+
+  /* Component dimensions */
+  --navbar-height: 45px;
+  --tabbar-height: 50px;
+} 

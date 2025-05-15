@@ -1,0 +1,83 @@
+/* Common component wrapper */
+.component-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xs);
+}
+
+/* Component content container */
+.component-content {
+  width: auto;
+  height: auto;
+}
+
+/* Full-width components */
+.component-content--full-width {
+  width: 100%;
+}
+
+/* Full-height components */
+.component-content--full-height {
+  height: 100%;
+}
+
+/* Safe area aware components */
+.safe-area-top {
+  padding-top: var(--safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: var(--safe-area-inset-bottom);
+}
+
+/* Specific component styles */
+.button-wrapper .adm-button {
+  width: 100%;
+}
+
+.input-wrapper .adm-input {
+  width: 100%;
+}
+
+.searchbar-wrapper .adm-search-bar {
+  width: 100%;
+}
+
+.navbar-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.card-wrapper .adm-card {
+  width: 100%;
+  height: 100%;
+}
+
+.radio-wrapper .adm-radio-group {
+  width: 100%;
+}
+
+.radio-wrapper .adm-space {
+  width: 100%;
+}
+
+.grid-wrapper .adm-grid {
+  width: 100%;
+  height: 100%;
+}
+
+.list-wrapper .adm-list {
+  width: 100%;
+  height: 100%;
+}
+
+.swipe-action-wrapper .adm-swipe-action {
+  width: 100%;
+}
+
+.tabbar-wrapper .adm-tab-bar {
+  width: 100%;
+} 
