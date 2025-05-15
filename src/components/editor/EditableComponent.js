@@ -229,6 +229,8 @@ const EditableComponent = ({ id, type, x, y, width, height, selected, properties
       bounds="parent"
       minWidth={50}
       minHeight={30}
+      dragGrid={[20, 20]}
+      resizeGrid={[20, 20]}
     >
       <ComponentWrapper 
         selected={selected}
