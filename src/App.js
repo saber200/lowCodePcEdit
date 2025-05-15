@@ -1,17 +1,25 @@
 import React, { useState, useRef, useCallback } from 'react';
 import styled from 'styled-components';
 import 'antd-mobile/es/global';
+import { Toast } from 'antd-mobile';
 
 import ComponentList from './components/editor/ComponentList';
 import EditableComponent from './components/editor/EditableComponent';
 import PropertyPanel from './components/property-panel/PropertyPanel';
+import Header from './components/editor/Header';
+import PreviewModal from './components/preview/PreviewModal';
 import { getDefaultComponentSize, getComponentProperties } from './utils/componentProperties';
 import EditorContainer from './components/editor/EditorContainer';
+
+const AppLayout = styled.div`
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+`;
 
 const EditorLayout = styled.div`
   display: flex;
   flex: 1;
-  height: 100vh;
   background: #f5f5f5;
 `;
 
@@ -29,7 +37,76 @@ function App() {
   const [components, setComponents] = useState([]);
   const [nextId, setNextId] = useState(1);
   const [selectedId, setSelectedId] = useState(null);
+  const [previewVisible, setPreviewVisible] = useState(false);
   const editorRef = useRef(null);
+
+  const handleSave = useCallback(() => {
+    try {
+      // 创建页面配置对象
+      const pageConfig = {
+        version: '1.0.0',
+        components: components.map(comp => ({
+          id: comp.id,
+          type: comp.type,
+          x: comp.x,
+          y: comp.y,
+          width: comp.width,
+          height: comp.height,
+          properties: comp.properties
+        })),
+        lastModified: new Date().toISOString()
+      };
+
+      // 将对象转换为JSON字符串
+      const jsonStr = JSON.stringify(pageConfig, null, 2);
+      
+      // 创建Blob对象
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      
+      // 创建下载链接
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // 生成文件名：page-config-时间戳.json
+      const timestamp = new Date().getTime();
+      link.download = `page-config-${timestamp}.json`;
+      
+      // 触发下载
+      document.body.appendChild(link);
+      link.click();
+      
+      // 清理
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      Toast.show({
+        content: '页面配置已保存',
+        duration: 1500,
+      });
+    } catch (error) {
+      console.error('保存失败:', error);
+      Toast.show({
+        content: '保存失败，请重试',
+        duration: 1500,
+      });
+    }
+  }, [components]);
+
+  const handlePreview = useCallback(() => {
+    if (components.length === 0) {
+      Toast.show({
+        content: '请先添加一些组件',
+        duration: 1500,
+      });
+      return;
+    }
+    setPreviewVisible(true);
+  }, [components]);
+
+  const handleClosePreview = useCallback(() => {
+    setPreviewVisible(false);
+  }, []);
 
   const handleDragStart = (e, componentType) => {
     e.dataTransfer.setData('componentType', componentType);
@@ -128,40 +205,48 @@ function App() {
   const selectedComponent = components.find((comp) => comp.id === selectedId);
 
   return (
-    <EditorLayout>
-      <ComponentList onDragStart={handleDragStart} />
-      <Canvas>
-        <EditorContainer>
-          <div 
-            ref={editorRef}
-            className="editor-content"
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onClick={handleCanvasClick}
-            style={{
-              position: 'relative',
-              width: '100%',
-              height: '100%',
-              minHeight: '100vh'
-            }}
-          >
-            {components.map((component) => (
-              <EditableComponent
-                key={component.id}
-                {...component}
-                selected={component.id === selectedId}
-                onUpdate={updateComponent}
-                onDelete={deleteComponent}
-              />
-            ))}
-          </div>
-        </EditorContainer>
-      </Canvas>
-      <PropertyPanel 
-        selectedComponent={selectedComponent}
-        onPropertyChange={updateComponentProperty}
+    <AppLayout>
+      <Header onSave={handleSave} onPreview={handlePreview} />
+      <EditorLayout>
+        <ComponentList onDragStart={handleDragStart} />
+        <Canvas>
+          <EditorContainer>
+            <div 
+              ref={editorRef}
+              className="editor-content"
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onClick={handleCanvasClick}
+              style={{
+                position: 'relative',
+                width: '100%',
+                height: '100%',
+                minHeight: '100vh'
+              }}
+            >
+              {components.map((component) => (
+                <EditableComponent
+                  key={component.id}
+                  {...component}
+                  selected={component.id === selectedId}
+                  onUpdate={updateComponent}
+                  onDelete={deleteComponent}
+                />
+              ))}
+            </div>
+          </EditorContainer>
+        </Canvas>
+        <PropertyPanel 
+          selectedComponent={selectedComponent}
+          onPropertyChange={updateComponentProperty}
+        />
+      </EditorLayout>
+      <PreviewModal
+        visible={previewVisible}
+        onClose={handleClosePreview}
+        components={components}
       />
-    </EditorLayout>
+    </AppLayout>
   );
 }
 
