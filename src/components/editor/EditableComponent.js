@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import styled from 'styled-components';
 import { Rnd } from 'react-rnd';
 import { 
@@ -25,32 +25,147 @@ const ComponentWrapper = styled.div`
   background: white;
   border: 1px solid #e8e8e8;
   border-radius: 4px;
-  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
   ${props => props.selected && `
     outline: 2px solid #1677ff;
     outline-offset: 2px;
+    z-index: 1;
   `}
+  
+  &:hover {
+    outline: 1px solid #1677ff;
+    outline-offset: 1px;
+  }
+
+  .adm-button {
+    width: 100%;
+    height: 100%;
+  }
+
+  .adm-input {
+    width: 100%;
+    height: 100%;
+  }
+
+  .adm-card {
+    width: 100%;
+    height: 100%;
+  }
+
+  .adm-tag {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .adm-search-bar {
+    width: 100%;
+    height: 100%;
+  }
+
+  .adm-nav-bar {
+    width: 100%;
+    height: 100%;
+  }
+
+  .adm-switch {
+    margin: auto;
+  }
+
+  .adm-radio-group {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+  }
+
+  .adm-checkbox {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .adm-rate {
+    margin: auto;
+  }
+
+  .adm-stepper {
+    margin: auto;
+  }
+
+  .adm-grid {
+    width: 100%;
+    height: 100%;
+  }
+
+  .adm-swipe-action {
+    width: 100%;
+    height: 100%;
+  }
+
+  .adm-tab-bar {
+    width: 100%;
+    height: 100%;
+  }
 `;
 
 const DeleteButton = styled.div`
   position: absolute;
-  right: -20px;
-  top: -20px;
+  right: -10px;
+  top: -10px;
   width: 20px;
   height: 20px;
   background: #ff4d4f;
   color: white;
   border-radius: 50%;
-  display: flex;
+  display: ${props => props.visible ? 'flex' : 'none'};
   align-items: center;
   justify-content: center;
   cursor: pointer;
   font-size: 12px;
-  z-index: 1;
-  display: ${props => props['data-visible'] ? 'flex' : 'none'};
+  z-index: 10000;
+  transform: translate(0, 0);
+  pointer-events: all;
+
+  &:hover {
+    background: #ff7875;
+  }
 `;
 
 const EditableComponent = ({ id, type, x, y, width, height, selected, properties = {}, onUpdate, onDelete }) => {
+  const handleSelect = useCallback((e) => {
+    e.stopPropagation();
+    if (!selected) {
+      onUpdate(id, { selected: true });
+    }
+  }, [id, selected, onUpdate]);
+
+  const handleDelete = useCallback((e) => {
+    e.stopPropagation();
+    onDelete(id);
+  }, [id, onDelete]);
+
+  const handleDragStop = useCallback((e, d) => {
+    e.stopPropagation();
+    onUpdate(id, { x: d.x, y: d.y });
+  }, [id, onUpdate]);
+
+  const handleResizeStop = useCallback((e, direction, ref, delta, position) => {
+    e.stopPropagation();
+    onUpdate(id, {
+      width: parseInt(ref.style.width),
+      height: parseInt(ref.style.height),
+      x: position.x,
+      y: position.y
+    });
+  }, [id, onUpdate]);
+
   const renderComponent = () => {
     const props = properties || {};
     
@@ -209,45 +324,44 @@ const EditableComponent = ({ id, type, x, y, width, height, selected, properties
 
   return (
     <Rnd
-      default={{
-        x: x,
-        y: y,
-        width: width,
-        height: height
-      }}
-      onDragStop={(e, d) => {
-        onUpdate({ x: d.x, y: d.y });
-      }}
-      onResizeStop={(e, direction, ref, delta, position) => {
-        onUpdate({
-          width: ref.offsetWidth,
-          height: ref.offsetHeight,
-          x: position.x,
-          y: position.y
-        });
-      }}
+      size={{ width, height }}
+      position={{ x, y }}
+      onDragStop={handleDragStop}
+      onResizeStop={handleResizeStop}
+      onClick={handleSelect}
       bounds="parent"
+      dragHandleClassName="component-drag-handle"
+      enableResizing={{
+        top: true, right: true, bottom: true, left: true,
+        topRight: true, topLeft: true, bottomRight: true, bottomLeft: true
+      }}
       minWidth={50}
       minHeight={30}
-      dragGrid={[20, 20]}
-      resizeGrid={[20, 20]}
+      style={{ position: 'absolute' }}
     >
-      <ComponentWrapper 
-        selected={selected}
-      >
-        {selected && (
-          <DeleteButton
-            data-visible={selected}
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
-          >
-            ×
-          </DeleteButton>
-        )}
-        {renderComponent()}
-      </ComponentWrapper>
+      <>
+        <DeleteButton 
+          visible={selected}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleDelete(e);
+          }}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+        >
+          ×
+        </DeleteButton>
+        <ComponentWrapper 
+          selected={selected}
+          className="component-drag-handle"
+          onClick={handleSelect}
+        >
+          {renderComponent()}
+        </ComponentWrapper>
+      </>
     </Rnd>
   );
 };

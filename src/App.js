@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import styled from 'styled-components';
 import 'antd-mobile/es/global';
 
@@ -79,9 +79,9 @@ function App() {
     e.dataTransfer.dropEffect = 'copy';
   };
 
-  const updateComponent = (id, updates) => {
-    setComponents(
-      components.map((comp) => {
+  const updateComponent = useCallback((id, updates) => {
+    setComponents(prevComponents =>
+      prevComponents.map(comp => {
         if (comp.id === id) {
           if ('selected' in updates) {
             setSelectedId(updates.selected ? id : null);
@@ -89,21 +89,23 @@ function App() {
           }
           return { ...comp, ...updates };
         }
+        // Deselect other components when one is selected
+        if ('selected' in updates && updates.selected) {
+          return { ...comp };
+        }
         return comp;
       })
     );
-  };
+  }, []);
 
-  const deleteComponent = (id) => {
-    setComponents(components.filter(comp => comp.id !== id));
-    if (selectedId === id) {
-      setSelectedId(null);
-    }
-  };
+  const deleteComponent = useCallback((id) => {
+    setComponents(prevComponents => prevComponents.filter(comp => comp.id !== id));
+    setSelectedId(prev => prev === id ? null : prev);
+  }, []);
 
-  const updateComponentProperty = (id, propertyName, value) => {
-    setComponents(
-      components.map((comp) =>
+  const updateComponentProperty = useCallback((id, propertyName, value) => {
+    setComponents(prevComponents =>
+      prevComponents.map(comp =>
         comp.id === id
           ? {
               ...comp,
@@ -115,7 +117,13 @@ function App() {
           : comp
       )
     );
-  };
+  }, []);
+
+  const handleCanvasClick = useCallback((e) => {
+    if (e.target === e.currentTarget) {
+      setSelectedId(null);
+    }
+  }, []);
 
   const selectedComponent = components.find((comp) => comp.id === selectedId);
 
@@ -129,10 +137,12 @@ function App() {
             className="editor-content"
             onDrop={handleDrop}
             onDragOver={handleDragOver}
-            onClick={(e) => {
-              if (e.target === e.currentTarget) {
-                setSelectedId(null);
-              }
+            onClick={handleCanvasClick}
+            style={{
+              position: 'relative',
+              width: '100%',
+              height: '100%',
+              minHeight: '100vh'
             }}
           >
             {components.map((component) => (
