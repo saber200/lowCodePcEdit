@@ -17,6 +17,7 @@ import {
   SwipeAction,
   TabBar
 } from 'antd-mobile';
+import { snapPositionToGrid, snapDimensionsToGrid, GRID_SIZE } from '../../utils/gridUtils';
 
 const ComponentWrapper = styled.div`
   position: relative;
@@ -124,14 +125,23 @@ const DeleteButton = styled.div`
   background: #ff4d4f;
   color: white;
   border-radius: 50%;
-  display: ${props => props.visible ? 'flex' : 'none'};
+  display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   font-size: 12px;
   z-index: 10000;
   transform: translate(0, 0);
-  pointer-events: all;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: all 0.2s;
+
+  &.visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: all;
+  }
 
   &:hover {
     background: #ff7875;
@@ -153,16 +163,22 @@ const EditableComponent = ({ id, type, x, y, width, height, selected, properties
 
   const handleDragStop = useCallback((e, d) => {
     e.stopPropagation();
-    onUpdate(id, { x: d.x, y: d.y });
+    const { x, y } = snapPositionToGrid(d.x, d.y);
+    onUpdate(id, { x, y });
   }, [id, onUpdate]);
 
   const handleResizeStop = useCallback((e, direction, ref, delta, position) => {
     e.stopPropagation();
+    const newWidth = parseInt(ref.style.width);
+    const newHeight = parseInt(ref.style.height);
+    const { width: snappedWidth, height: snappedHeight } = snapDimensionsToGrid(newWidth, newHeight);
+    const { x: snappedX, y: snappedY } = snapPositionToGrid(position.x, position.y);
+    
     onUpdate(id, {
-      width: parseInt(ref.style.width),
-      height: parseInt(ref.style.height),
-      x: position.x,
-      y: position.y
+      width: snappedWidth,
+      height: snappedHeight,
+      x: snappedX,
+      y: snappedY
     });
   }, [id, onUpdate]);
 
@@ -335,13 +351,15 @@ const EditableComponent = ({ id, type, x, y, width, height, selected, properties
         top: true, right: true, bottom: true, left: true,
         topRight: true, topLeft: true, bottomRight: true, bottomLeft: true
       }}
-      minWidth={50}
-      minHeight={30}
+      minWidth={GRID_SIZE}
+      minHeight={GRID_SIZE}
+      dragGrid={[GRID_SIZE, GRID_SIZE]}
+      resizeGrid={[GRID_SIZE, GRID_SIZE]}
       style={{ position: 'absolute' }}
     >
       <>
         <DeleteButton 
-          visible={selected}
+          className={selected ? 'visible' : ''}
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
