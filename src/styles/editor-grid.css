@@ -47,6 +47,7 @@
   width: 366px;
   transform: translateX(-50%);
   min-height: calc(100% - 35px);
+  height: auto;
   pointer-events: none;
   z-index: 1;
   background: transparent;
@@ -192,32 +193,30 @@
 /* Editor content area */
 .editor-content {
   position: absolute;
-  top: 35px;
+  top: 17px;
   left: 50%;
   width: 366px;
   transform: translateX(-50%);
-  height: calc(100% - 35px);
+  min-height: calc(100% - 35px);
+  height: auto;
   z-index: 3;
-  box-sizing: border-box;
+  background: transparent;
 }
 
 /* Content wrapper */
 .editor-content-wrapper {
   position: relative;
-  width: 390px;
+  width: 100%;
   min-height: 100%;
-  padding-bottom: 50px;
-  margin: 0 auto;
+  height: auto;
 }
 
 /* Scroll container */
 .editor-scroll-container {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  overflow-y: scroll;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   /* 隐藏原生滚动条 */
