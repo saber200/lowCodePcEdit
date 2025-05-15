@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import 'antd-mobile/es/global';
 import { Toast } from 'antd-mobile';
@@ -7,7 +8,7 @@ import ComponentList from './components/editor/ComponentList';
 import EditableComponent from './components/editor/EditableComponent';
 import PropertyPanel from './components/property-panel/PropertyPanel';
 import Header from './components/editor/Header';
-import PreviewModal from './components/preview/PreviewModal';
+import PreviewPage from './pages/PreviewPage';
 import { getDefaultComponentSize, getComponentProperties } from './utils/componentProperties';
 import EditorContainer from './components/editor/EditorContainer';
 
@@ -33,12 +34,12 @@ const Canvas = styled.div`
   align-items: center;
 `;
 
-function App() {
+function Editor() {
   const [components, setComponents] = useState([]);
   const [nextId, setNextId] = useState(1);
   const [selectedId, setSelectedId] = useState(null);
-  const [previewVisible, setPreviewVisible] = useState(false);
   const editorRef = useRef(null);
+  const navigate = useNavigate();
 
   const handleSave = useCallback(() => {
     try {
@@ -101,12 +102,11 @@ function App() {
       });
       return;
     }
-    setPreviewVisible(true);
-  }, [components]);
-
-  const handleClosePreview = useCallback(() => {
-    setPreviewVisible(false);
-  }, []);
+    // 将组件数据存储到 localStorage
+    localStorage.setItem('previewComponents', JSON.stringify(components));
+    // 导航到预览页面
+    navigate('/preview');
+  }, [components, navigate]);
 
   const handleDragStart = (e, componentType) => {
     e.dataTransfer.setData('componentType', componentType);
@@ -156,6 +156,14 @@ function App() {
     e.dataTransfer.dropEffect = 'copy';
   };
 
+  const handleCanvasClick = useCallback((e) => {
+    if (e.target === e.currentTarget) {
+      setSelectedId(null);
+    }
+  }, []);
+
+  const selectedComponent = components.find((comp) => comp.id === selectedId);
+
   const updateComponent = useCallback((id, updates) => {
     setComponents(prevComponents =>
       prevComponents.map(comp => {
@@ -196,14 +204,6 @@ function App() {
     );
   }, []);
 
-  const handleCanvasClick = useCallback((e) => {
-    if (e.target === e.currentTarget) {
-      setSelectedId(null);
-    }
-  }, []);
-
-  const selectedComponent = components.find((comp) => comp.id === selectedId);
-
   return (
     <AppLayout>
       <Header onSave={handleSave} onPreview={handlePreview} />
@@ -241,12 +241,18 @@ function App() {
           onPropertyChange={updateComponentProperty}
         />
       </EditorLayout>
-      <PreviewModal
-        visible={previewVisible}
-        onClose={handleClosePreview}
-        components={components}
-      />
     </AppLayout>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<Editor />} />
+        <Route path="/preview" element={<PreviewPage />} />
+      </Routes>
+    </Router>
   );
 }
 
