@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button, Form, Select, Input, Card, Collapse } from 'antd';
 import styled from 'styled-components';
 
@@ -33,18 +33,117 @@ const EVENT_TYPES = [
   { label: '滑动', value: 'swipe' },
 ];
 
+// 动作分类
+const ACTION_CATEGORIES = {
+  COMPONENT: '组件交互',
+  SYSTEM: '系统功能'
+};
+
 // 预定义的动作类型
 const ACTION_TYPES = [
-  { label: '显示组件', value: 'show' },
-  { label: '隐藏组件', value: 'hide' },
-  { label: '切换显示状态', value: 'toggle' },
-  { label: '更新数据', value: 'updateData' },
-  { label: '跳转页面', value: 'navigate' },
-  { label: '提交表单', value: 'submit' },
+  // 组件交互类动作
+  { 
+    label: '显示组件', 
+    value: 'show',
+    category: ACTION_CATEGORIES.COMPONENT,
+    needTarget: true 
+  },
+  { 
+    label: '隐藏组件', 
+    value: 'hide',
+    category: ACTION_CATEGORIES.COMPONENT,
+    needTarget: true 
+  },
+  { 
+    label: '切换显示状态', 
+    value: 'toggle',
+    category: ACTION_CATEGORIES.COMPONENT,
+    needTarget: true 
+  },
+  { 
+    label: '更新数据', 
+    value: 'updateData',
+    category: ACTION_CATEGORIES.COMPONENT,
+    needTarget: true,
+    needParams: true 
+  },
+  
+  // 系统功能类动作
+  { 
+    label: '显示提示框', 
+    value: 'alert',
+    category: ACTION_CATEGORIES.SYSTEM,
+    needParams: true,
+    paramTemplate: { message: '提示内容' }
+  },
+  { 
+    label: '显示确认框', 
+    value: 'confirm',
+    category: ACTION_CATEGORIES.SYSTEM,
+    needParams: true,
+    paramTemplate: { 
+      title: '确认标题',
+      message: '确认内容',
+      okText: '确定',
+      cancelText: '取消'
+    }
+  },
+  { 
+    label: '打印日志', 
+    value: 'log',
+    category: ACTION_CATEGORIES.SYSTEM,
+    needParams: true,
+    paramTemplate: { message: '日志内容' }
+  },
+  { 
+    label: '复制到剪贴板', 
+    value: 'copy',
+    category: ACTION_CATEGORIES.SYSTEM,
+    needParams: true,
+    paramTemplate: { content: '要复制的内容' }
+  },
+  { 
+    label: '打开链接', 
+    value: 'openUrl',
+    category: ACTION_CATEGORIES.SYSTEM,
+    needParams: true,
+    paramTemplate: { 
+      url: 'https://example.com',
+      target: '_blank'
+    }
+  },
+  { 
+    label: '延迟执行', 
+    value: 'delay',
+    category: ACTION_CATEGORIES.SYSTEM,
+    needParams: true,
+    paramTemplate: { 
+      duration: 1000,
+      actions: []
+    }
+  }
 ];
 
-const EventEditor = ({ componentId, availableTargets, onSave }) => {
+const EventEditor = ({ componentId, availableTargets, onSave, initialEvents }) => {
   const [events, setEvents] = useState([]);
+
+  // 初始化事件配置
+  useEffect(() => {
+    if (initialEvents) {
+      // 为每个事件和动作添加唯一ID
+      const eventsWithIds = initialEvents.events?.map(event => ({
+        id: Date.now() + Math.random(),
+        type: event.type,
+        actions: event.actions.map(action => ({
+          id: Date.now() + Math.random(),
+          type: action.type,
+          target: action.target,
+          params: action.params || {}
+        }))
+      })) || [];
+      setEvents(eventsWithIds);
+    }
+  }, [initialEvents]);
 
   // 添加新事件
   const handleAddEvent = () => {
@@ -89,6 +188,12 @@ const EventEditor = ({ componentId, availableTargets, onSave }) => {
     }));
   };
 
+  // 根据动作类型获取参数模板
+  const getParamTemplate = (actionType) => {
+    const actionConfig = ACTION_TYPES.find(type => type.value === actionType);
+    return actionConfig?.paramTemplate || {};
+  };
+
   // 更新动作配置
   const handleActionChange = (eventId, actionId, field, value) => {
     setEvents(events.map(event => {
@@ -97,6 +202,14 @@ const EventEditor = ({ componentId, availableTargets, onSave }) => {
           ...event,
           actions: event.actions.map(action => {
             if (action.id === actionId) {
+              if (field === 'type') {
+                // 当动作类型改变时，设置默认参数模板
+                return { 
+                  ...action, 
+                  [field]: value,
+                  params: getParamTemplate(value)
+                };
+              }
               return { ...action, [field]: value };
             }
             return action;
@@ -127,17 +240,15 @@ const EventEditor = ({ componentId, availableTargets, onSave }) => {
 
   // 保存所有配置
   const handleSave = () => {
-    const config = {
-      componentId,
-      events: events.map(event => ({
-        type: event.type,
-        actions: event.actions.map(action => ({
-          type: action.type,
-          target: action.target,
-          params: action.params
-        }))
+    // 移除内部使用的 id
+    const config = events.map(event => ({
+      type: event.type,
+      actions: event.actions.map(action => ({
+        type: action.type,
+        target: action.target,
+        params: action.params
       }))
-    };
+    }));
     onSave?.(config);
   };
 
@@ -180,35 +291,63 @@ const EventEditor = ({ componentId, availableTargets, onSave }) => {
                       placeholder="选择动作"
                       value={action.type}
                       onChange={value => handleActionChange(event.id, action.id, 'type', value)}
-                      options={ACTION_TYPES}
-                    />
-                  </Form.Item>
-                  
-                  <Form.Item label="目标组件">
-                    <Select
-                      style={{ width: '100%' }}
-                      placeholder="选择目标"
-                      value={action.target}
-                      onChange={value => handleActionChange(event.id, action.id, 'target', value)}
-                      options={availableTargets}
-                    />
-                  </Form.Item>
-                  
-                  <Form.Item label="参数">
-                    <Input.TextArea
-                      placeholder="参数 (JSON格式)"
-                      value={JSON.stringify(action.params, null, 2)}
-                      onChange={e => {
-                        try {
-                          const value = JSON.parse(e.target.value);
-                          handleActionChange(event.id, action.id, 'params', value);
-                        } catch (error) {
-                          // 如果JSON解析失败，不更新值
+                      options={ACTION_TYPES.map(type => ({
+                        label: type.label,
+                        value: type.value,
+                        category: type.category
+                      }))}
+                      optionGroups={[
+                        {
+                          label: ACTION_CATEGORIES.COMPONENT,
+                          options: ACTION_TYPES
+                            .filter(type => type.category === ACTION_CATEGORIES.COMPONENT)
+                            .map(type => ({
+                              label: type.label,
+                              value: type.value
+                            }))
+                        },
+                        {
+                          label: ACTION_CATEGORIES.SYSTEM,
+                          options: ACTION_TYPES
+                            .filter(type => type.category === ACTION_CATEGORIES.SYSTEM)
+                            .map(type => ({
+                              label: type.label,
+                              value: type.value
+                            }))
                         }
-                      }}
-                      rows={4}
+                      ]}
                     />
                   </Form.Item>
+                  
+                  {ACTION_TYPES.find(type => type.value === action.type)?.needTarget && (
+                    <Form.Item label="目标组件">
+                      <Select
+                        style={{ width: '100%' }}
+                        placeholder="选择目标"
+                        value={action.target}
+                        onChange={value => handleActionChange(event.id, action.id, 'target', value)}
+                        options={availableTargets}
+                      />
+                    </Form.Item>
+                  )}
+                  
+                  {ACTION_TYPES.find(type => type.value === action.type)?.needParams && (
+                    <Form.Item label="参数">
+                      <Input.TextArea
+                        placeholder="参数 (JSON格式)"
+                        value={JSON.stringify(action.params, null, 2)}
+                        onChange={e => {
+                          try {
+                            const value = JSON.parse(e.target.value);
+                            handleActionChange(event.id, action.id, 'params', value);
+                          } catch (error) {
+                            // 如果JSON解析失败，不更新值
+                          }
+                        }}
+                        rows={4}
+                      />
+                    </Form.Item>
+                  )}
                   
                   <Button
                     danger

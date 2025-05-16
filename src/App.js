@@ -383,7 +383,7 @@ function Editor() {
     
     setPages(updatedPages);
     // 保存到 localStorage
-    localStorage.setItem('pages', JSON.stringify(updatedPages));
+    localStorage.setItem('previewPages', JSON.stringify(updatedPages));
     
     // 注册事件到事件系统
     ComponentEventAdapter.registerComponentEvents(

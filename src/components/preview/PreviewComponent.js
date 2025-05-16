@@ -198,7 +198,8 @@ const PreviewComponent = forwardRef(({ id, type, x, y, width, height, properties
 
   useEffect(() => {
     // 注册组件事件
-    if (events && Object.keys(events).length > 0) {
+    if (events && (Array.isArray(events) || Object.keys(events).length > 0)) {
+      console.log('Registering events for component:', id, events);
       ComponentEventAdapter.registerComponentEvents({ id }, events);
     }
 
@@ -210,12 +211,50 @@ const PreviewComponent = forwardRef(({ id, type, x, y, width, height, properties
 
   // 处理组件事件
   const handleEvent = (eventType, data = {}) => {
-    ComponentEventAdapter.triggerComponentEvent(
-      { id },
-      eventType,
-      data
-    );
+    console.log('Component handling event:', eventType, 'Component events:', events);
+    // 检查组件是否有对应的事件配置
+    const hasMatchingEvent = Array.isArray(events) 
+      ? events.some(event => event.type === eventType)
+      : events?.events?.some(event => event.type === eventType);
+
+    if (hasMatchingEvent) {
+      console.log('Found matching event config, triggering event');
+      ComponentEventAdapter.triggerComponentEvent(
+        { id },
+        eventType,
+        {
+          ...data,
+          componentId: id,
+          timestamp: Date.now()
+        }
+      );
+    } else {
+      console.log('No matching event config found');
+    }
   };
+
+  // 组件可见性控制
+  const [isVisible, setIsVisible] = useState(true);
+
+  useEffect(() => {
+    // 监听组件状态变化
+    const handleStateChange = (e) => {
+      if (e.detail.componentId === id) {
+        if ('visible' in e.detail) {
+          setIsVisible(e.detail.visible);
+        }
+      }
+    };
+
+    window.addEventListener('componentStateChange', handleStateChange);
+    return () => {
+      window.removeEventListener('componentStateChange', handleStateChange);
+    };
+  }, [id]);
+
+  if (!isVisible) {
+    return null;
+  }
 
   const renderComponent = () => {
     switch (type) {

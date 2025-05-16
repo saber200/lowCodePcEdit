@@ -149,6 +149,7 @@ const PropertyPanel = ({
                 <EventEditor
                   componentId={selectedComponent.id}
                   availableTargets={availableTargets}
+                  initialEvents={selectedComponent.events}
                   onSave={(config) => {
                     onSaveEvents?.(selectedComponent.id, config);
                   }}
