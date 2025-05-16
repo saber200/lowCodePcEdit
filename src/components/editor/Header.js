@@ -39,7 +39,7 @@ const Header = ({ onSave, onPreview, onReset }) => {
 
   return (
     <HeaderContainer>
-      <Title>移动端页面编辑器</Title>
+      <Title>小程序页面编辑器</Title>
       <ButtonGroup>
         <Button 
           size='small'

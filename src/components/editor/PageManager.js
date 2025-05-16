@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import styled from 'styled-components';
 import { Button, Dialog, Toast, Input } from 'antd-mobile';
 import { Tree } from 'antd';
@@ -6,18 +6,31 @@ import { AddOutline } from 'antd-mobile-icons';
 import 'antd/dist/reset.css';
 
 const PageManagerContainer = styled.div`
-  height: 40px;
+  width: 240px;
   background: #fff;
+  border-right: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+`;
+
+const PageManagerHeader = styled.div`
+  height: 56px;
+  padding: 0 16px;
   border-bottom: 1px solid #eee;
   display: flex;
   align-items: center;
-  padding: 0 24px;
-  gap: 12px;
+  justify-content: space-between;
+
+  h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+  }
 `;
 
 const TreeContainer = styled.div`
-  padding: 12px;
-  max-height: 60vh;
+  flex: 1;
+  padding: 16px;
   overflow-y: auto;
 
   .ant-tree {
@@ -67,25 +80,21 @@ const PageManager = ({
   onDeletePage, 
   onRenamePage 
 }) => {
-  const [isDialogVisible, setIsDialogVisible] = useState(false);
-
-  // 使用 useMemo 缓存树数据，只在 pages 变化时重新计算
   const treeData = useMemo(() => {
     // 创建主页节点
     const homeNode = {
-      key: 'home',
+      key: '1',
       title: (
         <TreeNodeContent>
           <span>主页</span>
         </TreeNodeContent>
-      ),
-      selectable: false
+      )
     };
 
-    // 获取一级页面（非主页和我的页面）
-    const firstLevelPages = pages.filter(page => 
-      !page.parentId && page.type !== 'home' && page.type !== 'profile'
-    );
+    // 获取一级页面（非主页和我的页面）并按 ID 排序
+    const firstLevelPages = pages
+      .filter(page => !page.parentId && page.type !== 'home' && page.type !== 'profile')
+      .sort((a, b) => a.id - b.id);
 
     // 构建一级页面节点
     const pageNodes = firstLevelPages.map(page => ({
@@ -95,6 +104,7 @@ const PageManager = ({
           <span>{page.name}</span>
           <AddButton
             size='mini'
+            fill='none'
             onClick={(e) => {
               e.stopPropagation();
               let tempName = '';
@@ -145,40 +155,40 @@ const PageManager = ({
       children: []
     }));
 
-    // 添加子页面到对应的父页面节点
-    pages.forEach(page => {
-      if (page.parentId) {
-        const parentNode = pageNodes.find(node => node.key === page.parentId.toString());
-        if (parentNode) {
-          parentNode.children.push({
-            key: page.id.toString(),
-            title: (
-              <TreeNodeContent>
-                <span>{page.name}</span>
-                <DeleteButton
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeletePage(page.id, page.name, page.type, onDeletePage);
-                  }}
-                >
-                  ×
-                </DeleteButton>
-              </TreeNodeContent>
-            )
-          });
-        }
+    // 添加子页面到对应的父页面节点，并按 ID 排序
+    const subPages = pages.filter(page => page.parentId);
+    subPages.sort((a, b) => a.id - b.id);
+
+    subPages.forEach(page => {
+      const parentNode = pageNodes.find(node => node.key === page.parentId.toString());
+      if (parentNode) {
+        parentNode.children.push({
+          key: page.id.toString(),
+          title: (
+            <TreeNodeContent>
+              <span>{page.name}</span>
+              <DeleteButton
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeletePage(page.id, page.name, page.type, onDeletePage);
+                }}
+              >
+                ×
+              </DeleteButton>
+            </TreeNodeContent>
+          )
+        });
       }
     });
 
     // 创建我的页面节点
     const profileNode = {
-      key: 'profile',
+      key: '2',
       title: (
         <TreeNodeContent>
           <span>我的</span>
         </TreeNodeContent>
-      ),
-      selectable: false
+      )
     };
 
     return [homeNode, ...pageNodes, profileNode];
@@ -202,100 +212,63 @@ const PageManager = ({
     });
   };
 
-  const handleShowDialog = () => {
-    setIsDialogVisible(true);
-  };
-
-  const handleCloseDialog = () => {
-    setIsDialogVisible(false);
-  };
-
   return (
-    <>
-      <PageManagerContainer>
+    <PageManagerContainer>
+      <PageManagerHeader>
+        <h2>页面管理</h2>
         <Button
           size='small'
-          onClick={handleShowDialog}
-          style={{
-            '--adm-button-border-radius': '20px'
+          onClick={() => {
+            let tempName = '';
+            Dialog.show({
+              title: '新建页面',
+              content: (
+                <div style={{ padding: '12px 0' }}>
+                  <Input
+                    placeholder="请输入页面名称"
+                    onChange={val => {
+                      tempName = val;
+                    }}
+                  />
+                </div>
+              ),
+              closeOnAction: true,
+              actions: [
+                {
+                  key: 'cancel',
+                  text: '取消'
+                },
+                {
+                  key: 'confirm',
+                  text: '确定',
+                  bold: true,
+                  onClick: () => {
+                    if (tempName?.trim()) {
+                      onAddPage(tempName.trim(), 'page');
+                    }
+                  }
+                }
+              ]
+            });
           }}
         >
-          页面管理
+          新建页面
         </Button>
-      </PageManagerContainer>
-
-      {isDialogVisible && (
-        <Dialog
-          visible={true}
-          title='页面管理'
-          content={
-            <TreeContainer>
-              <Tree
-                defaultExpandAll
-                treeData={treeData}
-                selectedKeys={[currentPageId?.toString()]}
-                onSelect={(selectedKeys) => {
-                  const pageId = selectedKeys[0];
-                  if (pageId && pageId !== 'home' && pageId !== 'profile') {
-                    onSelectPage(Number(pageId));
-                  }
-                }}
-              />
-              <div style={{ marginTop: '16px', borderTop: '1px solid #eee', paddingTop: '16px' }}>
-                <Button
-                  block
-                  color='primary'
-                  onClick={() => {
-                    let tempName = '';
-                    Dialog.show({
-                      title: '新建一级页面',
-                      content: (
-                        <div style={{ padding: '12px 0' }}>
-                          <Input
-                            placeholder="请输入页面名称"
-                            onChange={val => {
-                              tempName = val;
-                            }}
-                          />
-                        </div>
-                      ),
-                      closeOnAction: true,
-                      actions: [
-                        {
-                          key: 'cancel',
-                          text: '取消'
-                        },
-                        {
-                          key: 'confirm',
-                          text: '确定',
-                          bold: true,
-                          onClick: () => {
-                            if (tempName?.trim()) {
-                              onAddPage(tempName.trim(), 'normal', null);
-                            }
-                          }
-                        }
-                      ]
-                    });
-                  }}
-                >
-                  新建一级页面
-                </Button>
-              </div>
-            </TreeContainer>
-          }
-          closeOnAction
-          onClose={handleCloseDialog}
-          actions={[
-            {
-              key: 'close',
-              text: '关闭',
-              onClick: handleCloseDialog
+      </PageManagerHeader>
+      <TreeContainer>
+        <Tree
+          defaultExpandAll
+          treeData={treeData}
+          selectedKeys={[currentPageId?.toString()]}
+          onSelect={(selectedKeys) => {
+            const pageId = selectedKeys[0];
+            if (pageId) {
+              onSelectPage(Number(pageId));
             }
-          ]}
+          }}
         />
-      )}
-    </>
+      </TreeContainer>
+    </PageManagerContainer>
   );
 };
 

@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, forwardRef } from 'react';
 import styled from 'styled-components';
 import { Rnd } from 'react-rnd';
 import { 
@@ -148,7 +148,15 @@ const DeleteButton = styled.div`
   }
 `;
 
-const EditableComponent = ({ id, type, x, y, width, height, selected, properties = {}, onUpdate, onDelete }) => {
+const StyledRnd = styled(Rnd)`
+  &:hover ${DeleteButton} {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: all;
+  }
+`;
+
+const EditableComponent = forwardRef(({ id, type, x, y, width, height, selected, properties = {}, onUpdate, onDelete }, ref) => {
   const handleSelect = useCallback((e) => {
     e.stopPropagation();
     if (!selected) {
@@ -187,7 +195,6 @@ const EditableComponent = ({ id, type, x, y, width, height, selected, properties
     
     switch (type) {
       case 'Button':
-        console.log(props.defaultActiveKey)
         return (
           <Button 
             color={props.color || 'primary'} 
@@ -340,49 +347,32 @@ const EditableComponent = ({ id, type, x, y, width, height, selected, properties
   };
 
   return (
-    <Rnd
+    <StyledRnd
+      ref={ref}
       size={{ width, height }}
       position={{ x, y }}
       onDragStop={handleDragStop}
       onResizeStop={handleResizeStop}
       onClick={handleSelect}
       bounds="parent"
-      dragHandleClassName="component-drag-handle"
-      enableResizing={{
-        top: true, right: true, bottom: true, left: true,
-        topRight: true, topLeft: true, bottomRight: true, bottomLeft: true
-      }}
-      minWidth={GRID_SIZE}
-      minHeight={GRID_SIZE}
       dragGrid={[GRID_SIZE, GRID_SIZE]}
       resizeGrid={[GRID_SIZE, GRID_SIZE]}
-      style={{ position: 'absolute' }}
+      minWidth={GRID_SIZE * 2}
+      minHeight={GRID_SIZE * 2}
     >
-      <>
-        <DeleteButton 
+      <ComponentWrapper selected={selected}>
+        {renderComponent()}
+        <DeleteButton
           className={selected ? 'visible' : ''}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            handleDelete(e);
-          }}
-          onMouseDown={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
+          onClick={handleDelete}
         >
           ×
         </DeleteButton>
-        <ComponentWrapper 
-          selected={selected}
-          className="component-drag-handle"
-          onClick={handleSelect}
-        >
-          {renderComponent()}
-        </ComponentWrapper>
-      </>
-    </Rnd>
+      </ComponentWrapper>
+    </StyledRnd>
   );
-};
+});
+
+EditableComponent.displayName = 'EditableComponent';
 
 export default EditableComponent; 

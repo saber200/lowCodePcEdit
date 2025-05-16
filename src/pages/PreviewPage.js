@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, forwardRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { Button, TabBar } from 'antd-mobile';
+import { Button, TabBar, Popover } from 'antd-mobile';
 import PreviewComponent from '../components/preview/PreviewComponent';
 
 const PreviewContainer = styled.div`
@@ -78,10 +78,51 @@ const TabBarContainer = styled.div`
   border-top: 1px solid #eee;
 `;
 
+const SubPageList = styled.div`
+  min-width: 120px;
+  max-width: 200px;
+`;
+
+const SubPageItem = styled.div`
+  padding: 8px 12px;
+  font-size: 14px;
+  color: ${props => props.active ? '#1677ff' : '#333'};
+  cursor: pointer;
+  
+  &:hover {
+    background: #f5f5f5;
+  }
+  
+  &:active {
+    background: #e5e5e5;
+  }
+`;
+
+const TabBarItemWrapper = styled.div`
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+// 创建包装组件来处理 antd-mobile 组件的 ref
+const StyledTabBar = forwardRef((props, ref) => (
+  <TabBar {...props} ref={ref} />
+));
+
+const StyledPopover = forwardRef((props, ref) => (
+  <Popover {...props} ref={ref} />
+));
+
+const StyledButton = forwardRef((props, ref) => (
+  <Button {...props} ref={ref} />
+));
+
 const PreviewPage = () => {
   const navigate = useNavigate();
   const [pages, setPages] = useState([]);
   const [currentPageId, setCurrentPageId] = useState(null);
+  const [visiblePopover, setVisiblePopover] = useState(null);
 
   useEffect(() => {
     const savedPages = localStorage.getItem('previewPages');
@@ -89,14 +130,44 @@ const PreviewPage = () => {
     
     if (savedPages) {
       const parsedPages = JSON.parse(savedPages);
-      setPages(parsedPages);
-      setCurrentPageId(Number(savedCurrentPageId) || parsedPages[0]?.id);
+      // Sort pages: home first, then regular pages by ID, profile last
+      const sortedPages = parsedPages.sort((a, b) => {
+        if (a.type === 'home') return -1;
+        if (b.type === 'home') return 1;
+        if (a.type === 'profile') return 1;
+        if (b.type === 'profile') return -1;
+        return a.id - b.id;
+      });
+      setPages(sortedPages);
+      setCurrentPageId(Number(savedCurrentPageId) || sortedPages[0]?.id);
     } else {
       navigate('/');
     }
   }, [navigate]);
 
+  // 获取当前页面
   const currentPage = pages.find(page => page.id === currentPageId);
+  
+  // 获取一级页面（非子页面）
+  const mainPages = pages.filter(page => !page.parentId);
+  
+  // 获取子页面
+  const getSubPages = (parentId) => pages.filter(page => page.parentId === parentId);
+
+  const handlePageClick = (pageId) => {
+    const subPages = getSubPages(pageId);
+    
+    if (subPages.length === 0) {
+      // 如果没有子页面，直接切换到该页面
+      setCurrentPageId(pageId);
+      setVisiblePopover(null);
+    }
+  };
+
+  const handleSubPageClick = (pageId) => {
+    setCurrentPageId(pageId);
+    setVisiblePopover(null);
+  };
 
   const handleBack = () => {
     navigate('/');
@@ -104,11 +175,53 @@ const PreviewPage = () => {
 
   if (!currentPage) return null;
 
+  const renderTabBarItem = (page) => {
+    const subPages = getSubPages(page.id);
+    
+    if (subPages.length === 0) {
+      return (
+        <TabBar.Item
+          key={page.id.toString()}
+          title={page.name}
+        />
+      );
+    }
+
+    return (
+      <TabBar.Item
+        key={page.id.toString()}
+        title={
+          <StyledPopover
+            visible={visiblePopover === page.id}
+            onVisibleChange={(visible) => setVisiblePopover(visible ? page.id : null)}
+            trigger='click'
+            placement='top'
+            content={
+              <SubPageList>
+                {subPages.map(subPage => (
+                  <SubPageItem
+                    key={subPage.id}
+                    active={subPage.id === currentPageId}
+                    onClick={() => handleSubPageClick(subPage.id)}
+                  >
+                    {subPage.name}
+                  </SubPageItem>
+                ))}
+              </SubPageList>
+            }
+          >
+            <TabBarItemWrapper>{page.name}</TabBarItemWrapper>
+          </StyledPopover>
+        }
+      />
+    );
+  };
+
   return (
     <PreviewContainer>
       <Header>
         <Title>预览模式 - {currentPage.name}</Title>
-        <Button 
+        <StyledButton 
           color='primary'
           fill='outline'
           style={{
@@ -118,7 +231,7 @@ const PreviewPage = () => {
           onClick={handleBack}
         >
           返回编辑
-        </Button>
+        </StyledButton>
       </Header>
       <PhoneContainer>
         <PhoneScreen>
@@ -130,19 +243,18 @@ const PreviewPage = () => {
               />
             ))}
           </Content>
-          {pages.length > 1 && (
+          {mainPages.length > 1 && (
             <TabBarContainer>
-              <TabBar
-                activeKey={currentPageId.toString()}
-                onChange={key => setCurrentPageId(Number(key))}
+              <StyledTabBar
+                activeKey={
+                  currentPage.parentId
+                    ? pages.find(p => p.id === currentPage.parentId)?.id.toString()
+                    : currentPageId.toString()
+                }
+                onChange={key => handlePageClick(Number(key))}
               >
-                {pages.map(page => (
-                  <TabBar.Item
-                    key={page.id.toString()}
-                    title={page.name}
-                  />
-                ))}
-              </TabBar>
+                {mainPages.map(renderTabBarItem)}
+              </StyledTabBar>
             </TabBarContainer>
           )}
         </PhoneScreen>
