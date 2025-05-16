@@ -1,4 +1,4 @@
-import React, { useState, forwardRef } from 'react';
+import React, { useState, forwardRef, useEffect } from 'react';
 import styled from 'styled-components';
 import { 
   Button, 
@@ -20,6 +20,7 @@ import {
   Image
 } from 'antd-mobile';
 import { RightOutline } from 'antd-mobile-icons';
+import ComponentEventAdapter from '../../events/ComponentEventAdapter';
 
 const ComponentWrapper = styled.div`
   position: absolute;
@@ -184,7 +185,7 @@ const StyledTabBar = forwardRef((props, ref) => (
   <TabBar {...props} ref={ref} />
 ));
 
-const PreviewComponent = forwardRef(({ type, x, y, width, height, properties = {}, onPageChange }, ref) => {
+const PreviewComponent = forwardRef(({ id, type, x, y, width, height, properties = {}, events = {}, onPageChange }, ref) => {
   // 为需要状态的组件添加本地状态
   const [inputValue, setInputValue] = useState('');
   const [searchValue, setSearchValue] = useState('');
@@ -195,6 +196,27 @@ const PreviewComponent = forwardRef(({ type, x, y, width, height, properties = {
   const [stepperValue, setStepperValue] = useState(Number(properties.defaultValue) || 0);
   const [activeTab, setActiveTab] = useState(properties.defaultActiveKey || '首页');
 
+  useEffect(() => {
+    // 注册组件事件
+    if (events && Object.keys(events).length > 0) {
+      ComponentEventAdapter.registerComponentEvents({ id }, events);
+    }
+
+    // 清理事件
+    return () => {
+      ComponentEventAdapter.unregisterComponentEvents({ id });
+    };
+  }, [id, events]);
+
+  // 处理组件事件
+  const handleEvent = (eventType, data = {}) => {
+    ComponentEventAdapter.triggerComponentEvent(
+      { id },
+      eventType,
+      data
+    );
+  };
+
   const renderComponent = () => {
     switch (type) {
       case 'Button':
@@ -204,7 +226,7 @@ const PreviewComponent = forwardRef(({ type, x, y, width, height, properties = {
             fill={properties.fill || 'solid'}
             size={properties.size || 'middle'}
             block={properties.block}
-            onClick={() => console.log('Button clicked')}
+            onClick={() => handleEvent('click')}
           >
             {properties.text || '按钮'}
           </StyledButton>
@@ -218,7 +240,7 @@ const PreviewComponent = forwardRef(({ type, x, y, width, height, properties = {
             clearable={properties.clearable}
             disabled={properties.disabled}
             value={inputValue}
-            onChange={setInputValue}
+            onChange={e => handleEvent('change', { value: e.target.value })}
           />
         );
       
@@ -228,7 +250,7 @@ const PreviewComponent = forwardRef(({ type, x, y, width, height, properties = {
             title={properties.title || '卡片标题'}
             extra={properties.extra}
             style={{ width: '100%' }}
-            onClick={() => console.log('Card clicked')}
+            onClick={() => handleEvent('click')}
           >
             {properties.content || '卡片内容'}
           </StyledCard>
@@ -252,7 +274,7 @@ const PreviewComponent = forwardRef(({ type, x, y, width, height, properties = {
             showCancelButton={properties.showCancelButton}
             value={searchValue}
             onChange={setSearchValue}
-            onSearch={(val) => console.log('Search:', val)}
+            onSearch={(val) => handleEvent('search', { value: val })}
           />
         );
       
@@ -261,7 +283,7 @@ const PreviewComponent = forwardRef(({ type, x, y, width, height, properties = {
           <StyledNavBar
             back={properties.showBack ? (properties.back || '返回') : null}
             right={properties.right}
-            onBack={() => console.log('NavBar back clicked')}
+            onBack={() => handleEvent('back')}
           >
             {properties.title || '标题'}
           </StyledNavBar>
@@ -339,7 +361,7 @@ const PreviewComponent = forwardRef(({ type, x, y, width, height, properties = {
           .map((text, index) => ({
             key: index,
             title: text,
-            onClick: () => console.log('Grid item clicked:', text)
+            onClick: () => handleEvent('gridItemClick', { text })
           }));
         
         return (
@@ -362,7 +384,7 @@ const PreviewComponent = forwardRef(({ type, x, y, width, height, properties = {
               <List.Item
                 key={index}
                 description={item.description}
-                onClick={() => console.log('List item clicked:', item.title)}
+                onClick={() => handleEvent('listItemClick', { title: item.title })}
               >
                 {item.title}
               </List.Item>
@@ -379,7 +401,7 @@ const PreviewComponent = forwardRef(({ type, x, y, width, height, properties = {
               key: text,
               text: text,
               color: color,
-              onClick: () => console.log('SwipeAction clicked:', text)
+              onClick: () => handleEvent('swipeActionClick', { text })
             };
           });
 
@@ -405,7 +427,7 @@ const PreviewComponent = forwardRef(({ type, x, y, width, height, properties = {
       case 'PageLink':
         return (
           <PageLinkItem
-            onClick={() => onPageChange?.(properties.targetPageId)}
+            onClick={() => handleEvent('pageLinkClick', { targetPageId: properties.targetPageId })}
             arrow={<RightOutline />}
             style={{
               '--adm-font-size-main': '16px',

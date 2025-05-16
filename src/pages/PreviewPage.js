@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { Button, TabBar, Popover } from 'antd-mobile';
 import PreviewComponent from '../components/preview/PreviewComponent';
+import EventSystem from '../events/EventSystem';
+import { registerCommonEvents } from '../events/CommonEvents';
+import ComponentEventAdapter from '../events/ComponentEventAdapter';
 
 const PreviewContainer = styled.div`
   min-height: 100vh;
@@ -123,26 +126,146 @@ const PreviewPage = () => {
   const [pages, setPages] = useState([]);
   const [currentPageId, setCurrentPageId] = useState(null);
   const [visiblePopover, setVisiblePopover] = useState(null);
+  const [componentStates, setComponentStates] = useState({});
+
+  // 初始化事件系统
+  const initializeEventSystem = (pages) => {
+    // 注册所有组件的事件
+    pages.forEach(page => {
+      page.components.forEach(component => {
+        if (component.events) {
+          ComponentEventAdapter.registerComponentEvents(
+            { id: component.id },
+            component.events
+          );
+        }
+      });
+    });
+
+    // 注册事件处理函数
+    EventSystem.executeHandler = (componentId, handlerName, payload) => {
+      console.log('Executing event:', { componentId, handlerName, payload });
+      
+      const component = pages.flatMap(page => page.components)
+        .find(comp => comp.id === componentId);
+
+      if (!component) {
+        console.warn('Component not found:', componentId);
+        return;
+      }
+
+      switch (handlerName) {
+        case 'show':
+          if (!payload.target) {
+            console.warn('No target specified for show action');
+            return;
+          }
+          setComponentStates(prev => ({
+            ...prev,
+            [payload.target]: { ...prev[payload.target], visible: true }
+          }));
+          break;
+
+        case 'hide':
+          if (!payload.target) {
+            console.warn('No target specified for hide action');
+            return;
+          }
+          setComponentStates(prev => ({
+            ...prev,
+            [payload.target]: { ...prev[payload.target], visible: false }
+          }));
+          break;
+
+        case 'toggle':
+          if (!payload.target) {
+            console.warn('No target specified for toggle action');
+            return;
+          }
+          setComponentStates(prev => ({
+            ...prev,
+            [payload.target]: { 
+              ...prev[payload.target], 
+              visible: !prev[payload.target]?.visible 
+            }
+          }));
+          break;
+
+        case 'navigate':
+          if (!payload.target) {
+            console.warn('No target specified for navigate action');
+            return;
+          }
+          const targetPage = pages.find(p => p.id === payload.target);
+          if (targetPage) {
+            setCurrentPageId(targetPage.id);
+            setVisiblePopover(null);
+          } else {
+            console.warn('Target page not found:', payload.target);
+          }
+          break;
+
+        case 'updateData':
+          if (!payload.data) {
+            console.warn('No data specified for updateData action');
+            return;
+          }
+          setComponentStates(prev => ({
+            ...prev,
+            [componentId]: { ...prev[componentId], ...payload.data }
+          }));
+          break;
+
+        default:
+          console.warn('Unhandled event:', handlerName, payload);
+      }
+    };
+  };
 
   useEffect(() => {
+    // 1. 注册常用事件类型
+    registerCommonEvents();
+
     const savedPages = localStorage.getItem('previewPages');
     const savedCurrentPageId = localStorage.getItem('currentPageId');
     
+    let parsedPages = null;
+
     if (savedPages) {
-      const parsedPages = JSON.parse(savedPages);
-      // Sort pages: home first, then regular pages by ID, profile last
-      const sortedPages = parsedPages.sort((a, b) => {
-        if (a.type === 'home') return -1;
-        if (b.type === 'home') return 1;
-        if (a.type === 'profile') return 1;
-        if (b.type === 'profile') return -1;
-        return a.id - b.id;
+      parsedPages = JSON.parse(savedPages);
+      setPages(parsedPages);
+      setCurrentPageId(Number(savedCurrentPageId) || parsedPages[0]?.id);
+
+      // 2. 初始化事件系统
+      initializeEventSystem(parsedPages);
+
+      // 3. 初始化组件状态
+      const initialStates = {};
+      parsedPages.forEach(page => {
+        page.components.forEach(component => {
+          if (component.properties) {
+            initialStates[component.id] = {
+              visible: true,
+              ...component.properties
+            };
+          }
+        });
       });
-      setPages(sortedPages);
-      setCurrentPageId(Number(savedCurrentPageId) || sortedPages[0]?.id);
+      setComponentStates(initialStates);
     } else {
       navigate('/');
     }
+
+    // 4. 清理函数
+    return () => {
+      if (parsedPages) {
+        parsedPages.forEach(page => {
+          page.components.forEach(component => {
+            ComponentEventAdapter.unregisterComponentEvents({ id: component.id });
+          });
+        });
+      }
+    };
   }, [navigate]);
 
   // 获取当前页面
@@ -240,6 +363,8 @@ const PreviewPage = () => {
               <PreviewComponent
                 key={component.id}
                 {...component}
+                state={componentStates[component.id]}
+                visible={componentStates[component.id]?.visible}
               />
             ))}
           </Content>

@@ -12,6 +12,7 @@ import PageManager from './components/editor/PageManager';
 import PreviewPage from './pages/PreviewPage';
 import { getDefaultComponentSize } from './utils/componentProperties';
 import EditorContainer from './components/editor/EditorContainer';
+import ComponentEventAdapter from './events/ComponentEventAdapter';
 
 const AppLayout = styled.div`
   display: flex;
@@ -49,6 +50,33 @@ const EditorContent = styled.div`
   background: white;
   border-radius: 45px;
   overflow: hidden;
+`;
+
+const AppContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+`;
+
+const MainContent = styled.div`
+  flex: 1;
+  background: #f5f5f5;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+`;
+
+const PreviewButton = styled.button`
+  background-color: #1890ff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 20px;
 `;
 
 function Editor() {
@@ -333,6 +361,37 @@ function Editor() {
     }));
   }, [updatePageData]);
 
+  // 保存组件事件配置
+  const handleSaveEvents = (componentId, eventConfig) => {
+    const updatedPages = pages.map(page => {
+      if (page.id === currentPage.id) {
+        return {
+          ...page,
+          components: page.components.map(comp => {
+            if (comp.id === componentId) {
+              return {
+                ...comp,
+                events: eventConfig
+              };
+            }
+            return comp;
+          })
+        };
+      }
+      return page;
+    });
+    
+    setPages(updatedPages);
+    // 保存到 localStorage
+    localStorage.setItem('pages', JSON.stringify(updatedPages));
+    
+    // 注册事件到事件系统
+    ComponentEventAdapter.registerComponentEvents(
+      { id: componentId },
+      eventConfig
+    );
+  };
+
   return (
     <AppLayout>
       <Header 
@@ -375,7 +434,9 @@ function Editor() {
         </Canvas>
         <PropertyPanel
           selectedComponent={selectedComponent}
+          components={currentPage?.components || []}
           onPropertyChange={updateComponentProperty}
+          onSaveEvents={handleSaveEvents}
         />
       </EditorLayout>
     </AppLayout>
