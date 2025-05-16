@@ -1,10 +1,10 @@
-import React from 'react';
-import styled from 'styled-components';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from 'antd-mobile';
+import styled from 'styled-components';
+import { Button, TabBar } from 'antd-mobile';
 import PreviewComponent from '../components/preview/PreviewComponent';
 
-const PageContainer = styled.div`
+const PreviewContainer = styled.div`
   min-height: 100vh;
   background: #1a1a1a;
   display: flex;
@@ -61,56 +61,93 @@ const PhoneScreen = styled.div`
   border-radius: 45px;
   overflow: hidden;
   position: relative;
+  display: flex;
+  flex-direction: column;
 `;
 
-const PreviewArea = styled.div`
-  width: 360px;
-  height: 800px;
-  margin: 24px auto;
-  background: #f5f5f5;
-  position: relative;
+const Content = styled.div`
+  flex: 1;
   overflow: auto;
+  position: relative;
+  background: #f5f5f5;
 `;
 
-const BackButton = styled(Button)`
-  --adm-color-primary: #fff;
-  --adm-button-border-radius: 20px;
+const TabBarContainer = styled.div`
+  height: 50px;
+  background: #fff;
+  border-top: 1px solid #eee;
 `;
 
 const PreviewPage = () => {
   const navigate = useNavigate();
-  
-  // 从 localStorage 获取组件数据
-  const components = JSON.parse(localStorage.getItem('previewComponents') || '[]');
+  const [pages, setPages] = useState([]);
+  const [currentPageId, setCurrentPageId] = useState(null);
+
+  useEffect(() => {
+    const savedPages = localStorage.getItem('previewPages');
+    const savedCurrentPageId = localStorage.getItem('currentPageId');
+    
+    if (savedPages) {
+      const parsedPages = JSON.parse(savedPages);
+      setPages(parsedPages);
+      setCurrentPageId(Number(savedCurrentPageId) || parsedPages[0]?.id);
+    } else {
+      navigate('/');
+    }
+  }, [navigate]);
+
+  const currentPage = pages.find(page => page.id === currentPageId);
 
   const handleBack = () => {
     navigate('/');
   };
 
+  if (!currentPage) return null;
+
   return (
-    <PageContainer>
+    <PreviewContainer>
       <Header>
-        <Title>页面预览</Title>
-        <BackButton 
-          onClick={handleBack}
+        <Title>预览模式 - {currentPage.name}</Title>
+        <Button 
+          color='primary'
           fill='outline'
+          style={{
+            '--adm-color-primary': '#fff',
+            '--adm-button-border-radius': '20px'
+          }}
+          onClick={handleBack}
         >
-          返回编辑器
-        </BackButton>
+          返回编辑
+        </Button>
       </Header>
       <PhoneContainer>
         <PhoneScreen>
-          <PreviewArea>
-            {components.map(component => (
+          <Content>
+            {currentPage.components.map((component) => (
               <PreviewComponent
                 key={component.id}
                 {...component}
               />
             ))}
-          </PreviewArea>
+          </Content>
+          {pages.length > 1 && (
+            <TabBarContainer>
+              <TabBar
+                activeKey={currentPageId.toString()}
+                onChange={key => setCurrentPageId(Number(key))}
+              >
+                {pages.map(page => (
+                  <TabBar.Item
+                    key={page.id.toString()}
+                    title={page.name}
+                  />
+                ))}
+              </TabBar>
+            </TabBarContainer>
+          )}
         </PhoneScreen>
       </PhoneContainer>
-    </PageContainer>
+    </PreviewContainer>
   );
 };
 

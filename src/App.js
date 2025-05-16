@@ -8,8 +8,9 @@ import ComponentList from './components/editor/ComponentList';
 import EditableComponent from './components/editor/EditableComponent';
 import PropertyPanel from './components/property-panel/PropertyPanel';
 import Header from './components/editor/Header';
+import PageManager from './components/editor/PageManager';
 import PreviewPage from './pages/PreviewPage';
-import { getDefaultComponentSize, getComponentProperties } from './utils/componentProperties';
+import { getDefaultComponentSize } from './utils/componentProperties';
 import EditorContainer from './components/editor/EditorContainer';
 
 const AppLayout = styled.div`
@@ -35,54 +36,126 @@ const Canvas = styled.div`
 `;
 
 function Editor() {
-  const [components, setComponents] = useState([]);
-  const [nextId, setNextId] = useState(1);
+  // 页面相关的状态
+  const [pages, setPages] = useState(() => {
+    // 尝试从 localStorage 恢复数据
+    const savedPages = localStorage.getItem('previewPages');
+    if (savedPages) {
+      return JSON.parse(savedPages);
+    }
+    // 如果没有保存的数据，返回默认值
+    return [
+      { id: 1, name: '首页', type: 'home', components: [], nextId: 1 },
+      { id: 2, name: '我的', type: 'profile', components: [], nextId: 1 }
+    ];
+  });
+
+  const [currentPageId, setCurrentPageId] = useState(() => {
+    // 尝试从 localStorage 恢复当前页面 ID
+    const savedCurrentPageId = localStorage.getItem('currentPageId');
+    return savedCurrentPageId ? Number(savedCurrentPageId) : 1;
+  });
+  
+  // 获取当前页面
+  const currentPage = pages.find(page => page.id === currentPageId);
+  const components = currentPage?.components || [];
+  const nextId = currentPage?.nextId || 1;
+
   const [selectedId, setSelectedId] = useState(null);
   const editorRef = useRef(null);
   const navigate = useNavigate();
 
+  // 页面管理相关的处理函数
+  const handleAddPage = useCallback((pageName, pageType = 'normal', parentId = null) => {
+    setPages(prevPages => [
+      ...prevPages,
+      {
+        id: Math.max(...prevPages.map(p => p.id)) + 1,
+        name: pageName,
+        type: pageType,
+        parentId: parentId,
+        components: [],
+        nextId: 1
+      }
+    ]);
+  }, []);
+
+  const handleSelectPage = useCallback((pageId) => {
+    setCurrentPageId(pageId);
+    setSelectedId(null);
+  }, []);
+
+  const handleDeletePage = useCallback((pageId) => {
+    setPages(prevPages => prevPages.filter(p => p.id !== pageId));
+    if (currentPageId === pageId) {
+      setCurrentPageId(pages.find(p => p.id !== pageId)?.id);
+    }
+  }, [currentPageId, pages]);
+
+  const handleRenamePage = useCallback((pageId, newName) => {
+    setPages(prevPages =>
+      prevPages.map(page =>
+        page.id === pageId
+          ? { ...page, name: newName }
+          : page
+      )
+    );
+  }, []);
+
+  const handleReset = useCallback(() => {
+    setPages([
+      { id: 1, name: '首页', type: 'home', components: [], nextId: 1 },
+      { id: 2, name: '我的', type: 'profile', components: [], nextId: 1 }
+    ]);
+    setCurrentPageId(1);
+    setSelectedId(null);
+    // 清除 localStorage 中的数据
+    localStorage.removeItem('previewPages');
+    localStorage.removeItem('currentPageId');
+    Toast.show({
+      content: '已重置编辑器',
+      duration: 1500,
+    });
+  }, []);
+
   const handleSave = useCallback(() => {
     try {
-      // 创建页面配置对象
-      const pageConfig = {
+      // 创建多页面配置对象
+      const config = {
         version: '1.0.0',
-        components: components.map(comp => ({
-          id: comp.id,
-          type: comp.type,
-          x: comp.x,
-          y: comp.y,
-          width: comp.width,
-          height: comp.height,
-          properties: comp.properties
+        pages: pages.map(page => ({
+          id: page.id,
+          name: page.name,
+          components: page.components.map(comp => ({
+            id: comp.id,
+            type: comp.type,
+            x: comp.x,
+            y: comp.y,
+            width: comp.width,
+            height: comp.height,
+            properties: comp.properties
+          }))
         })),
         lastModified: new Date().toISOString()
       };
 
-      // 将对象转换为JSON字符串
-      const jsonStr = JSON.stringify(pageConfig, null, 2);
-      
-      // 创建Blob对象
+      const jsonStr = JSON.stringify(config, null, 2);
       const blob = new Blob([jsonStr], { type: 'application/json' });
-      
-      // 创建下载链接
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
       
-      // 生成文件名：page-config-时间戳.json
       const timestamp = new Date().getTime();
-      link.download = `page-config-${timestamp}.json`;
+      link.download = `miniapp-config-${timestamp}.json`;
       
-      // 触发下载
       document.body.appendChild(link);
       link.click();
       
-      // 清理
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
       
       Toast.show({
-        content: '页面配置已保存',
+        content: '小程序配置已保存',
         duration: 1500,
       });
     } catch (error) {
@@ -92,26 +165,33 @@ function Editor() {
         duration: 1500,
       });
     }
-  }, [components]);
+  }, [pages]);
 
   const handlePreview = useCallback(() => {
-    if (components.length === 0) {
+    if (pages.every(page => page.components.length === 0)) {
       Toast.show({
         content: '请先添加一些组件',
         duration: 1500,
       });
       return;
     }
-    // 将组件数据存储到 localStorage
-    localStorage.setItem('previewComponents', JSON.stringify(components));
+    // 将所有页面数据存储到 localStorage
+    localStorage.setItem('previewPages', JSON.stringify(pages));
+    localStorage.setItem('currentPageId', currentPageId.toString());
     // 导航到预览页面
     navigate('/preview');
-  }, [components, navigate]);
+  }, [pages, currentPageId, navigate]);
 
-  const handleDragStart = (e, componentType) => {
-    e.dataTransfer.setData('componentType', componentType);
-    e.dataTransfer.effectAllowed = 'copy';
-  };
+  // 组件操作相关的处理函数
+  const updatePageData = useCallback((updater) => {
+    setPages(prevPages =>
+      prevPages.map(page =>
+        page.id === currentPageId
+          ? updater(page)
+          : page
+      )
+    );
+  }, [currentPageId]);
 
   const handleDrop = (e) => {
     e.preventDefault();
@@ -125,14 +205,11 @@ function Editor() {
     const scrollTop = editorContent.scrollTop || 0;
     const scrollLeft = editorContent.scrollLeft || 0;
 
-    // Calculate position relative to the editor content area
     const x = e.clientX - rect.left + scrollLeft;
     const y = e.clientY - rect.top + scrollTop;
 
-    // Get default size for the component
     const { width, height } = getDefaultComponentSize(componentType);
     
-    // Ensure the component is placed within bounds
     const boundedX = Math.max(0, Math.min(x, rect.width - width));
     const boundedY = Math.max(0, Math.min(y, rect.height - height));
 
@@ -146,9 +223,17 @@ function Editor() {
       properties: {}
     };
 
-    setComponents([...components, newComponent]);
-    setNextId(nextId + 1);
+    updatePageData(page => ({
+      ...page,
+      components: [...page.components, newComponent],
+      nextId: page.nextId + 1
+    }));
     setSelectedId(nextId);
+  };
+
+  const handleDragStart = (e, componentType) => {
+    e.dataTransfer.setData('componentType', componentType);
+    e.dataTransfer.effectAllowed = 'copy';
   };
 
   const handleDragOver = (e) => {
@@ -165,8 +250,9 @@ function Editor() {
   const selectedComponent = components.find((comp) => comp.id === selectedId);
 
   const updateComponent = useCallback((id, updates) => {
-    setComponents(prevComponents =>
-      prevComponents.map(comp => {
+    updatePageData(page => ({
+      ...page,
+      components: page.components.map(comp => {
         if (comp.id === id) {
           if ('selected' in updates) {
             setSelectedId(updates.selected ? id : null);
@@ -174,23 +260,23 @@ function Editor() {
           }
           return { ...comp, ...updates };
         }
-        // Deselect other components when one is selected
-        if ('selected' in updates && updates.selected) {
-          return { ...comp };
-        }
         return comp;
       })
-    );
-  }, []);
+    }));
+  }, [updatePageData]);
 
   const deleteComponent = useCallback((id) => {
-    setComponents(prevComponents => prevComponents.filter(comp => comp.id !== id));
+    updatePageData(page => ({
+      ...page,
+      components: page.components.filter(comp => comp.id !== id)
+    }));
     setSelectedId(prev => prev === id ? null : prev);
-  }, []);
+  }, [updatePageData]);
 
   const updateComponentProperty = useCallback((id, propertyName, value) => {
-    setComponents(prevComponents =>
-      prevComponents.map(comp =>
+    updatePageData(page => ({
+      ...page,
+      components: page.components.map(comp =>
         comp.id === id
           ? {
               ...comp,
@@ -201,12 +287,24 @@ function Editor() {
             }
           : comp
       )
-    );
-  }, []);
+    }));
+  }, [updatePageData]);
 
   return (
     <AppLayout>
-      <Header onSave={handleSave} onPreview={handlePreview} />
+      <Header 
+        onSave={handleSave} 
+        onPreview={handlePreview}
+        onReset={handleReset}
+      />
+      <PageManager
+        pages={pages}
+        currentPageId={currentPageId}
+        onAddPage={handleAddPage}
+        onSelectPage={handleSelectPage}
+        onDeletePage={handleDeletePage}
+        onRenamePage={handleRenamePage}
+      />
       <EditorLayout>
         <ComponentList onDragStart={handleDragStart} />
         <Canvas>

@@ -16,8 +16,10 @@ import {
   List,
   SwipeAction,
   TabBar,
-  Space
+  Space,
+  Image
 } from 'antd-mobile';
+import { RightOutline } from 'antd-mobile-icons';
 
 const ComponentWrapper = styled.div`
   position: absolute;
@@ -35,7 +37,14 @@ const ComponentWrapper = styled.div`
   }
 `;
 
-const PreviewComponent = ({ type, x, y, width, height, properties = {} }) => {
+const PageLinkItem = styled(List.Item)`
+  margin: 8px 12px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: white;
+`;
+
+const PreviewComponent = ({ type, x, y, width, height, properties = {}, onPageChange }) => {
   // 为需要状态的组件添加本地状态
   const [inputValue, setInputValue] = useState('');
   const [searchValue, setSearchValue] = useState('');
@@ -259,6 +268,30 @@ const PreviewComponent = ({ type, x, y, width, height, properties = {} }) => {
               <TabBar.Item key={item.key} title={item.title} />
             ))}
           </TabBar>
+        );
+
+      case 'PageLink':
+        return (
+          <PageLinkItem
+            onClick={() => onPageChange?.(properties.targetPageId)}
+            arrow={<RightOutline />}
+            style={{
+              '--adm-font-size-main': '16px',
+              '--adm-color-text': '#333',
+            }}
+          >
+            <Space>
+              {properties.icon && (
+                <Image
+                  src={properties.icon}
+                  width={24}
+                  height={24}
+                  fit='contain'
+                />
+              )}
+              <span>{properties.text || '页面链接'}</span>
+            </Space>
+          </PageLinkItem>
         );
       
       default:

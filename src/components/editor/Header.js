@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import { Button } from 'antd-mobile';
+import { Button, Dialog } from 'antd-mobile';
 
 const HeaderContainer = styled.div`
   height: 60px;
@@ -23,11 +23,30 @@ const ButtonGroup = styled.div`
   gap: 12px;
 `;
 
-const Header = ({ onSave, onPreview }) => {
+const Header = ({ onSave, onPreview, onReset }) => {
+  const handleReset = async () => {
+    const result = await Dialog.confirm({
+      content: '是否确定重置？',
+      confirmText: '确定',
+      cancelText: '取消',
+    });
+    
+    if (result) {
+      onReset?.();
+    }
+  };
+
   return (
     <HeaderContainer>
       <Title>移动端页面编辑器</Title>
       <ButtonGroup>
+        <Button 
+          color='danger'
+          fill='outline' 
+          onClick={handleReset}
+        >
+          重置
+        </Button>
         <Button 
           color='primary' 
           fill='outline'

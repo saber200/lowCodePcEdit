@@ -187,6 +187,7 @@ const EditableComponent = ({ id, type, x, y, width, height, selected, properties
     
     switch (type) {
       case 'Button':
+        console.log(props.defaultActiveKey)
         return (
           <Button 
             color={props.color || 'primary'} 
