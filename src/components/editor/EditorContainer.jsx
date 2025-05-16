@@ -5,10 +5,17 @@ const EditorContainer = ({ children }) => {
   return (
     <div className="editor-grid-container">
       <div className="editor-inner-container">
-        <div className="editor-content-wrapper">
-          {/* Base grid overlay */}
-          <div className="editor-grid-overlay" />
-          
+        <div 
+          className="editor-content-wrapper"
+          style={{
+            backgroundImage: `
+              linear-gradient(to right, rgba(0, 0, 0, 0.1) 1px, transparent 1px),
+              linear-gradient(to bottom, rgba(0, 0, 0, 0.1) 1px, transparent 1px)
+            `,
+            backgroundSize: '8px 8px',
+            backgroundPosition: '0 0',
+          }}
+        >
           {/* Layout guides */}
           <div className="editor-layout-guides" />
           

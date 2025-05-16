@@ -3,13 +3,14 @@ import styled from 'styled-components';
 import { Button, Dialog } from 'antd-mobile';
 
 const HeaderContainer = styled.div`
-  height: 60px;
+  min-height: 40px;
   background: #ffffff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
   padding: 0 24px;
   justify-content: space-between;
+  align-items: center;
 `;
 
 const Title = styled.h1`
@@ -41,6 +42,7 @@ const Header = ({ onSave, onPreview, onReset }) => {
       <Title>移动端页面编辑器</Title>
       <ButtonGroup>
         <Button 
+          size='small'
           color='danger'
           fill='outline' 
           onClick={handleReset}
@@ -48,6 +50,7 @@ const Header = ({ onSave, onPreview, onReset }) => {
           重置
         </Button>
         <Button 
+          size='small'
           color='primary' 
           fill='outline'
           onClick={onPreview}
@@ -55,6 +58,7 @@ const Header = ({ onSave, onPreview, onReset }) => {
           预览
         </Button>
         <Button 
+          size='small'
           color='primary'
           onClick={onSave}
         >
