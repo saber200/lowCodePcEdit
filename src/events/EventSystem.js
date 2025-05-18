@@ -10,6 +10,9 @@ class EventSystem {
     
     this.eventRegistry = new Map();
     this.eventConfigs = new Map();
+    
+    // 在构造函数中立即加载配置
+    this.loadSavedConfigs();
   }
 
   // 注册事件类型
@@ -23,29 +26,62 @@ class EventSystem {
     }
   }
 
+  // 获取组件的事件配置
+  getComponentConfig(componentId) {
+    // 标准化 componentId
+    const normalizedId = String(componentId);
+    console.log('Getting config for component:', {
+      originalId: componentId,
+      normalizedId,
+      type: typeof componentId
+    });
+    
+    const config = this.eventConfigs.get(normalizedId);
+    console.log('Found config:', config);
+    
+    // 确保返回有效的配置对象
+    return config || { events: [] };
+  }
+
   // 绑定事件到组件
   bindEvent(componentId, config) {
-    console.log('Binding events for component:', componentId, 'with config:', config);
-    this.eventConfigs.set(componentId, config);
-    
-    // 为每个事件注册处理函数
-    config.events?.forEach(event => {
-      console.log('Processing event:', event);
-      const eventData = this.eventRegistry.get(event.type);
-      if (eventData) {
-        const handler = this.createEventHandler(componentId, event);
-        eventData.handlers.push(handler);
-        console.log('Added handler for event:', event.type);
-      } else {
-        console.warn('No event data found for type:', event.type);
-        // 自动注册事件类型
-        this.registerEvent(event.type);
-        const eventData = this.eventRegistry.get(event.type);
-        const handler = this.createEventHandler(componentId, event);
-        eventData.handlers.push(handler);
-        console.log('Auto-registered event type and added handler:', event.type);
-      }
+    // 标准化 componentId
+    const normalizedId = String(componentId);
+    console.log('EventSystem: Binding events for component:', {
+      componentId: normalizedId,
+      config
     });
+    
+    if (!config.events) {
+      config = { events: Array.isArray(config) ? config : [config] };
+    }
+    
+    // 移除旧的事件处理器
+    this.unbindEvent(normalizedId);
+    
+    // 保存新配置
+    this.eventConfigs.set(normalizedId, config);
+    
+    // 绑定新的事件处理器
+    config.events.forEach(event => {
+      if (!event.type) {
+        console.warn('EventSystem: Invalid event config:', event);
+        return;
+      }
+      
+      let eventData = this.eventRegistry.get(event.type);
+      
+      if (!eventData) {
+        this.registerEvent(event.type);
+        eventData = this.eventRegistry.get(event.type);
+      }
+      
+      const handler = this.createEventHandler(normalizedId, event);
+      eventData.handlers.push(handler);
+    });
+    
+    // 保存到 localStorage
+    this.saveConfigs();
   }
 
   // 触发事件
@@ -68,35 +104,151 @@ class EventSystem {
 
   // 解绑事件
   unbindEvent(componentId) {
-    console.log('Unbinding events for component:', componentId);
-    const config = this.eventConfigs.get(componentId);
-    if (config) {
-      config.events?.forEach(event => {
+    // 标准化 componentId
+    const normalizedId = String(componentId);
+    console.log('Unbinding events for component:', {
+      originalId: componentId,
+      normalizedId
+    });
+    
+    const config = this.eventConfigs.get(normalizedId);
+    if (config && config.events) {
+      config.events.forEach(event => {
         const eventData = this.eventRegistry.get(event.type);
         if (eventData) {
           eventData.handlers = eventData.handlers.filter(
-            handler => handler.componentId !== componentId
+            handler => handler.componentId !== normalizedId
           );
-          console.log('Removed handlers for event:', event.type);
         }
       });
-      this.eventConfigs.delete(componentId);
+    }
+    
+    this.eventConfigs.delete(normalizedId);
+  }
+
+  // 从 localStorage 加载配置
+  loadSavedConfigs() {
+    try {
+      console.log('EventSystem: Loading saved configs from localStorage');
+      const savedConfigs = localStorage.getItem('eventSystemConfigs');
+      console.log('EventSystem: Raw saved configs:', savedConfigs);
+      
+      if (savedConfigs) {
+        const configs = JSON.parse(savedConfigs);
+        console.log('EventSystem: Parsed configs:', configs);
+        
+        // 清空现有配置
+        this.eventConfigs.clear();
+        this.eventRegistry.clear();
+        
+        // 预处理：收集所有事件类型
+        const eventTypes = new Set();
+        Object.values(configs).forEach(config => {
+          if (config.events) {
+            config.events.forEach(event => {
+              eventTypes.add(event.type);
+            });
+          }
+        });
+        
+        console.log('EventSystem: Collected event types:', Array.from(eventTypes));
+        
+        // 注册所有事件类型
+        eventTypes.forEach(type => {
+          console.log('EventSystem: Registering event type:', type);
+          this.registerEvent(type);
+        });
+        
+        // 加载组件配置
+        Object.entries(configs).forEach(([componentId, config]) => {
+          const normalizedId = String(componentId);
+          console.log('EventSystem: Loading config for component:', {
+            componentId: normalizedId,
+            config
+          });
+          
+          if (!config.events) {
+            console.warn('EventSystem: Invalid config for component:', normalizedId);
+            return;
+          }
+          
+          this.eventConfigs.set(normalizedId, config);
+          
+          // 绑定事件处理器
+          config.events.forEach(event => {
+            console.log('EventSystem: Binding event for component:', {
+              componentId: normalizedId,
+              eventType: event.type
+            });
+            
+            const eventData = this.eventRegistry.get(event.type);
+            if (eventData) {
+              const handler = this.createEventHandler(normalizedId, event);
+              eventData.handlers.push(handler);
+            }
+          });
+        });
+        
+        console.log('EventSystem: Current state after loading:', {
+          eventConfigs: Object.fromEntries(this.eventConfigs),
+          eventRegistry: Object.fromEntries(this.eventRegistry)
+        });
+      } else {
+        console.log('EventSystem: No saved configs found in localStorage');
+      }
+    } catch (error) {
+      console.error('EventSystem: Error loading configs:', error);
+      this.eventConfigs.clear();
+      this.eventRegistry.clear();
+    }
+  }
+
+  // 保存配置到 localStorage
+  saveConfigs() {
+    try {
+      console.log('EventSystem: Saving configs to localStorage');
+      console.log('EventSystem: Current eventConfigs:', Object.fromEntries(this.eventConfigs));
+      
+      // 将 Map 转换为普通对象以便序列化
+      const configs = Object.fromEntries(this.eventConfigs);
+      
+      // 确保所有组件 ID 都是字符串类型
+      const normalizedConfigs = Object.entries(configs).reduce((acc, [id, config]) => {
+        acc[String(id)] = config;
+        return acc;
+      }, {});
+      
+      console.log('EventSystem: Normalized configs to save:', normalizedConfigs);
+      localStorage.setItem('eventSystemConfigs', JSON.stringify(normalizedConfigs));
+      
+      // 验证保存是否成功
+      const savedConfigs = localStorage.getItem('eventSystemConfigs');
+      console.log('EventSystem: Verified saved configs:', savedConfigs);
+    } catch (error) {
+      console.error('EventSystem: Error saving configs:', error);
     }
   }
 
   // 创建事件处理器
   createEventHandler(componentId, event) {
-    console.log('Creating event handler for component:', componentId, 'event:', event);
-    const handler = (payload) => {
-      console.log('Event handler called:', event.type, 'with payload:', payload);
-      // 执行所有动作
-      event.actions.forEach(action => {
-        console.log('Executing action:', action);
+    // 标准化 componentId
+    const normalizedId = String(componentId);
+    
+    return (payload) => {
+      console.log('Event handler called:', {
+        type: event.type,
+        componentId: normalizedId,
+        payload
+      });
+      
+      event.actions?.forEach(action => {
+        // 确保 action.target 也被标准化
+        if (action.target) {
+          action.target = String(action.target);
+        }
         this.executeAction(action, payload);
       });
     };
-    handler.componentId = componentId;
-    return handler;
   }
 
   // 执行动作

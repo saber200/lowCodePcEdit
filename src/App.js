@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import 'antd-mobile/es/global';
@@ -84,8 +84,28 @@ function Editor() {
   const [pages, setPages] = useState(() => {
     // 尝试从 localStorage 恢复数据
     const savedPages = localStorage.getItem('previewPages');
+    console.log('Loading saved pages from localStorage:', savedPages);
+    
+    // 尝试从 localStorage 恢复事件配置
+    const savedEventConfigs = localStorage.getItem('eventSystemConfigs');
+    console.log('Loading saved event configs:', savedEventConfigs);
+    
     if (savedPages) {
       const parsedPages = JSON.parse(savedPages);
+      
+      // 如果有事件配置，将其合并到组件中
+      if (savedEventConfigs) {
+        const eventConfigs = JSON.parse(savedEventConfigs);
+        parsedPages.forEach(page => {
+          page.components.forEach(component => {
+            const componentEvents = eventConfigs[component.id];
+            if (componentEvents) {
+              component.events = componentEvents.events;
+            }
+          });
+        });
+      }
+      
       // Sort pages: home first, then regular pages by ID, profile last
       return parsedPages.sort((a, b) => {
         if (a.type === 'home') return -1;
@@ -101,6 +121,30 @@ function Editor() {
       { id: 2, name: '我的', type: 'profile', components: [], nextId: 1 }
     ];
   });
+
+  // 初始化事件系统
+  useEffect(() => {
+    console.log('Initializing event system...');
+    console.log('Current pages:', pages);
+    
+    // 加载保存的事件配置
+    ComponentEventAdapter.loadSavedConfigs();
+    
+    // 遍历所有页面和组件，重新注册事件
+    pages.forEach(page => {
+      console.log('Processing page:', page.name, page.id);
+      page.components.forEach(component => {
+        console.log('Processing component:', component.id, 'events:', component.events);
+        if (component.events) {
+          console.log('Registering events for component:', component.id, component.events);
+          ComponentEventAdapter.registerComponentEvents(
+            { id: component.id },
+            component.events
+          );
+        }
+      });
+    });
+  }, []); // 仅在组件挂载时执行一次
 
   const [currentPageId, setCurrentPageId] = useState(() => {
     // 尝试从 localStorage 恢复当前页面 ID
@@ -363,15 +407,17 @@ function Editor() {
 
   // 保存组件事件配置
   const handleSaveEvents = (componentId, eventConfig) => {
+    console.log('Saving events for component:', componentId, eventConfig);
     const updatedPages = pages.map(page => {
       if (page.id === currentPage.id) {
         return {
           ...page,
           components: page.components.map(comp => {
             if (comp.id === componentId) {
+              console.log('Updating component events:', comp.id, eventConfig);
               return {
                 ...comp,
-                events: eventConfig
+                events: eventConfig.events || eventConfig // 确保事件配置格式一致
               };
             }
             return comp;
@@ -382,10 +428,12 @@ function Editor() {
     });
     
     setPages(updatedPages);
+    
     // 保存到 localStorage
+    console.log('Saving pages with events to localStorage:', updatedPages);
     localStorage.setItem('previewPages', JSON.stringify(updatedPages));
     
-    // 注册事件到事件系统
+    // 注册到事件系统
     ComponentEventAdapter.registerComponentEvents(
       { id: componentId },
       eventConfig

@@ -129,20 +129,32 @@ const EventEditor = ({ componentId, availableTargets, onSave, initialEvents }) =
 
   // 初始化事件配置
   useEffect(() => {
+    console.log('EventEditor initialEvents:', initialEvents);
+    
+    // 处理不同格式的初始事件配置
+    let eventsToInit = [];
     if (initialEvents) {
-      // 为每个事件和动作添加唯一ID
-      const eventsWithIds = initialEvents.events?.map(event => ({
-        id: Date.now() + Math.random(),
-        type: event.type,
-        actions: event.actions.map(action => ({
-          id: Date.now() + Math.random(),
-          type: action.type,
-          target: action.target,
-          params: action.params || {}
-        }))
-      })) || [];
-      setEvents(eventsWithIds);
+      if (Array.isArray(initialEvents)) {
+        eventsToInit = initialEvents;
+      } else if (initialEvents.events && Array.isArray(initialEvents.events)) {
+        eventsToInit = initialEvents.events;
+      }
     }
+    
+    // 为每个事件和动作添加唯一ID
+    const eventsWithIds = eventsToInit.map(event => ({
+      id: Date.now() + Math.random(),
+      type: event.type,
+      actions: (event.actions || []).map(action => ({
+        id: Date.now() + Math.random(),
+        type: action.type,
+        target: action.target,
+        params: action.params || {}
+      }))
+    }));
+    
+    console.log('EventEditor initialized events:', eventsWithIds);
+    setEvents(eventsWithIds);
   }, [initialEvents]);
 
   // 添加新事件

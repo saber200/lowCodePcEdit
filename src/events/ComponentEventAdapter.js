@@ -8,6 +8,11 @@ class ComponentEventAdapter {
     ComponentEventAdapter.instance = this;
   }
 
+  // 加载保存的事件配置
+  loadSavedConfigs() {
+    EventSystem.loadSavedConfigs();
+  }
+
   // 将组件事件转换为系统事件
   adaptComponentEvent(component, event) {
     console.log('Adapting component event:', event, 'for component:', component);
