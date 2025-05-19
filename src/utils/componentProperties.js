@@ -185,18 +185,28 @@ export const getComponentProperties = (type) => {
           type: 'array',
           label: '列配置',
           default: [
-            { title: '标题1', dataIndex: 'col1', key: 'col1' },
-            { title: '标题2', dataIndex: 'col2', key: 'col2' },
-            { title: '标题3', dataIndex: 'col3', key: 'col3' }
+            { title: '姓名', dataIndex: 'name', width: '25%', editable: true },
+            { title: '年龄', dataIndex: 'age', width: '15%', editable: true },
+            { title: '地址', dataIndex: 'address', width: '40%', editable: true }
           ]
         },
         data: {
           type: 'array',
           label: '表格数据',
           default: [
-            { key: '1', col1: '内容1-1', col2: '内容1-2', col3: '内容1-3' },
-            { key: '2', col1: '内容2-1', col2: '内容2-2', col3: '内容2-3' }
+            { key: '1', name: '示例1', age: 32, address: '北京' },
+            { key: '2', name: '示例2', age: 28, address: '上海' }
           ]
+        },
+        editable: {
+          type: 'boolean',
+          label: '可编辑',
+          default: true
+        },
+        bordered: {
+          type: 'boolean',
+          label: '显示边框',
+          default: true
         }
       };
     default:

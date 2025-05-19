@@ -35,7 +35,7 @@ const componentCategories = {
   '导航布局': ['NavBar', 'TabBar'],
   '基础组件': ['Button', 'Tag'],
   '表单组件': ['Input', 'SearchBar', 'Switch', 'Radio', 'Checkbox', 'Rate', 'Stepper'],
-  '数据展示': ['Grid', 'Card'],
+  '数据展示': ['Grid', 'Card', 'Table'],
   '操作反馈': ['SwipeAction'],
 };
 

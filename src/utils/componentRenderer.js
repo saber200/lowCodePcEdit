@@ -1,16 +1,20 @@
 import React from 'react';
 import {
-  Button,
-  Input,
-  Card,
-  Tag,
+  Button as AntButton,
+  Input as AntInput,
+  Card as AntCard,
+  Tag as AntTag,
+  Table as AntTable,
+  Space,
+  Form,
+  Avatar
+} from 'antd';
+import {
   NavBar,
   TabBar,
   Grid,
   List,
-  Avatar,
   SwipeAction,
-  Space,
   Radio,
   Checkbox,
   Rate,
@@ -18,6 +22,7 @@ import {
   SearchBar,
   Switch
 } from 'antd-mobile';
+import EditableTable from '../components/editor/components/Table';
 import '../styles/variables.css';
 import '../styles/components.css';
 
@@ -68,18 +73,16 @@ export const renderComponent = (type, properties = {}) => {
     switch (type) {
       case 'Button':
         return (
-          <Button 
-            color={properties?.color || 'primary'}
-            fill={properties?.fill || 'solid'}
-            size={properties?.size || 'middle'}
+          <AntButton 
+            type={properties?.color || 'primary'}
             block={properties?.block}
           >
             {properties?.text || '按钮'}
-          </Button>
+          </AntButton>
         );
       case 'Input':
         return (
-          <Input 
+          <AntInput 
             placeholder={properties?.placeholder || '请输入'}
             type={properties?.type || 'text'}
             clearable={properties?.clearable}
@@ -106,13 +109,13 @@ export const renderComponent = (type, properties = {}) => {
         );
       case 'Card':
         return (
-          <Card 
+          <AntCard 
             title={properties?.title || '卡片标题'}
             extra={properties?.extra}
-            headerStyle={properties?.headerStyle === 'primary' ? { color: 'var(--primary-color)' } : {}}
+            headStyle={properties?.headerStyle === 'primary' ? { color: 'var(--primary-color)' } : {}}
           >
-            <Card.Body>{properties?.content || '卡片内容'}</Card.Body>
-          </Card>
+            <AntCard.Body>{properties?.content || '卡片内容'}</AntCard.Body>
+          </AntCard>
         );
       case 'Switch':
         return (
@@ -167,13 +170,13 @@ export const renderComponent = (type, properties = {}) => {
         );
       case 'Tag':
         return (
-          <Tag 
+          <AntTag 
             color={properties?.color || 'primary'}
             fill={properties?.fill}
             round={properties?.round}
           >
             {properties?.text || '标签'}
-          </Tag>
+          </AntTag>
         );
       case 'Grid':
         const gridItems = (properties?.items || '条目1\n条目2\n条目3\n条目4\n条目5\n条目6').split('\n');
@@ -228,6 +231,13 @@ export const renderComponent = (type, properties = {}) => {
               <TabBar.Item key={item} title={item} />
             ))}
           </TabBar>
+        );
+      case 'Table':
+        return (
+          <EditableTable
+            properties={properties}
+            style={{ width: '100%', height: '100%' }}
+          />
         );
       default:
         return <div>未知组件</div>;
