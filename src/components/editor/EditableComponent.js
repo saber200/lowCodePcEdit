@@ -182,7 +182,8 @@ const EditableComponent = forwardRef(({ id, type, x, y, width, height, selected,
     const newHeight = parseInt(ref.style.height);
     const { width: snappedWidthRaw, height: snappedHeight } = snapDimensionsToGrid(newWidth, newHeight);
     const { x: snappedX, y: snappedY } = snapPositionToGrid(position.x, position.y);
-    const SCREEN_WIDTH = 404;
+    // 编辑区实际宽度，需与 .editor-content/.editor-grid-overlay 保持一致
+    const SCREEN_WIDTH = 360;
     let snappedWidth = snappedWidthRaw;
     if (snappedX + snappedWidth > SCREEN_WIDTH) {
       snappedWidth = SCREEN_WIDTH - snappedX;
