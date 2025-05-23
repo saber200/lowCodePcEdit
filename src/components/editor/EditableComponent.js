@@ -180,9 +180,13 @@ const EditableComponent = forwardRef(({ id, type, x, y, width, height, selected,
     e.stopPropagation();
     const newWidth = parseInt(ref.style.width);
     const newHeight = parseInt(ref.style.height);
-    const { width: snappedWidth, height: snappedHeight } = snapDimensionsToGrid(newWidth, newHeight);
+    const { width: snappedWidthRaw, height: snappedHeight } = snapDimensionsToGrid(newWidth, newHeight);
     const { x: snappedX, y: snappedY } = snapPositionToGrid(position.x, position.y);
-    
+    const SCREEN_WIDTH = 404;
+    let snappedWidth = snappedWidthRaw;
+    if (snappedX + snappedWidth > SCREEN_WIDTH) {
+      snappedWidth = SCREEN_WIDTH - snappedX;
+    }
     onUpdate(id, {
       width: snappedWidth,
       height: snappedHeight,
