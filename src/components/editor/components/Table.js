@@ -146,21 +146,23 @@ const EditableTable = ({ properties = {}, style }) => {
   });
 
   return (
-    <Form form={form} component={false}>
-      <Table
-        components={{
-          body: {
-            cell: EditableCell,
-          },
-        }}
-        bordered
-        dataSource={data}
-        columns={columns}
-        rowClassName="editable-row"
-        pagination={false}
-        style={{ ...style, width: '100%' }}
-      />
-    </Form>
+    <div style={{ width: '100%', height: '100%', overflow: 'auto' }}>
+      <Form form={form} component={false} style={{ width: '100%', height: '100%' }}>
+        <Table
+          components={{
+            body: {
+              cell: EditableCell,
+            },
+          }}
+          bordered
+          dataSource={data}
+          columns={columns}
+          rowClassName="editable-row"
+          pagination={false}
+          style={{ ...style, width: '100%', height: '100%' }}
+        />
+      </Form>
+    </div>
   );
 };
 

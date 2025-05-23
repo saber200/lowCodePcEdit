@@ -18,6 +18,7 @@ import {
   TabBar
 } from 'antd-mobile';
 import { snapPositionToGrid, snapDimensionsToGrid, GRID_SIZE } from '../../utils/gridUtils';
+import { renderComponent } from '../../utils/componentRenderer';
 
 const ComponentWrapper = styled.div`
   position: relative;
@@ -190,162 +191,6 @@ const EditableComponent = forwardRef(({ id, type, x, y, width, height, selected,
     });
   }, [id, onUpdate]);
 
-  const renderComponent = () => {
-    const props = properties || {};
-    
-    switch (type) {
-      case 'Button':
-        return (
-          <Button 
-            color={props.color || 'primary'} 
-            fill={props.fill || 'solid'}
-            size={props.size || 'middle'}
-            block={props.block}
-          >
-            {props.text || '按钮'}
-          </Button>
-        );
-      case 'Input':
-        return (
-          <Input
-            placeholder={props.placeholder || '请输入'}
-            type={props.type || 'text'}
-            clearable={props.clearable !== false}
-            disabled={props.disabled}
-          />
-        );
-      case 'Card':
-        return (
-          <Card
-            title={props.title || '卡片标题'}
-            extra={props.extra}
-            style={{ 
-              '--adm-color-background': props.headerStyle === 'primary' ? '#1677ff' : undefined,
-              '--adm-color-text': props.headerStyle === 'primary' ? '#fff' : undefined
-            }}
-          >
-            {props.content || '卡片内容'}
-          </Card>
-        );
-      case 'Tag':
-        return (
-          <Tag
-            color={props.color || 'primary'}
-            fill={props.fill}
-            round={props.round}
-          >
-            {props.text || '标签'}
-          </Tag>
-        );
-      case 'SearchBar':
-        return (
-          <SearchBar
-            placeholder={props.placeholder || '请输入搜索关键词'}
-            showCancelButton={props.showCancelButton}
-            cancelText={props.cancelText}
-            maxLength={parseInt(props.maxLength) || 50}
-          />
-        );
-      case 'NavBar':
-        return (
-          <NavBar
-            back={props.showBack ? props.back || '返回' : null}
-            right={props.right}
-          >
-            {props.title || '标题'}
-          </NavBar>
-        );
-      case 'Switch':
-        return (
-          <Switch
-            checked={props.checked}
-            disabled={props.disabled}
-            loading={props.loading}
-          />
-        );
-      case 'Radio':
-        return (
-          <Radio.Group
-            defaultValue={props.defaultValue}
-            disabled={props.disabled}
-            direction={props.direction || 'vertical'}
-          >
-            {(props.options || []).map((option, index) => (
-              <Radio key={index} value={option.value}>{option.label}</Radio>
-            ))}
-          </Radio.Group>
-        );
-      case 'Checkbox':
-        return (
-          <Checkbox
-            checked={props.checked}
-            disabled={props.disabled}
-            indeterminate={props.indeterminate}
-          >
-            {props.text || '复选框'}
-          </Checkbox>
-        );
-      case 'Rate':
-        return (
-          <Rate
-            count={parseInt(props.count) || 5}
-            defaultValue={parseInt(props.defaultValue) || 0}
-            allowHalf={props.allowHalf}
-            disabled={props.disabled}
-          />
-        );
-      case 'Stepper':
-        return (
-          <Stepper
-            defaultValue={parseInt(props.defaultValue) || 0}
-            min={parseInt(props.min) || 0}
-            max={parseInt(props.max) || 100}
-            step={parseInt(props.step) || 1}
-            disabled={props.disabled}
-          />
-        );
-      case 'Grid':
-        return (
-          <Grid columns={parseInt(props.columns) || 4} gap={parseInt(props.gap) || 8}>
-            {(props.items || []).map((item, index) => (
-              <Grid.Item key={index}>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '24px' }}>{item.icon}</div>
-                  <div>{item.text}</div>
-                </div>
-              </Grid.Item>
-            ))}
-          </Grid>
-        );
-      case 'SwipeAction':
-        return (
-          <SwipeAction
-            rightActions={(props.rightActions || []).map(action => ({
-              key: action.text,
-              text: action.text,
-              color: action.color
-            }))}
-          >
-            {props.content || '滑动操作项'}
-          </SwipeAction>
-        );
-      case 'TabBar':
-        return (
-          <TabBar defaultActiveKey={props.defaultActiveKey}>
-            {(props.items || []).map(item => (
-              <TabBar.Item
-                key={item.key}
-                icon={<span style={{ fontSize: '20px' }}>{item.icon}</span>}
-                title={item.title}
-              />
-            ))}
-          </TabBar>
-        );
-      default:
-        return <div>Unknown component type: {type}</div>;
-    }
-  };
-
   return (
     <StyledRnd
       ref={ref}
@@ -361,7 +206,7 @@ const EditableComponent = forwardRef(({ id, type, x, y, width, height, selected,
       minHeight={GRID_SIZE * 2}
     >
       <ComponentWrapper selected={selected}>
-        {renderComponent()}
+        {renderComponent(type, properties)}
         <DeleteButton
           className={selected ? 'visible' : ''}
           onClick={handleDelete}

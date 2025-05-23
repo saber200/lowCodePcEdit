@@ -21,6 +21,7 @@ import {
 } from 'antd-mobile';
 import { RightOutline } from 'antd-mobile-icons';
 import ComponentEventAdapter from '../../events/ComponentEventAdapter';
+import { renderComponent as renderLowCodeComponent } from '../../utils/componentRenderer';
 
 const ComponentWrapper = styled.div`
   position: absolute;
@@ -257,6 +258,9 @@ const PreviewComponent = forwardRef(({ id, type, x, y, width, height, properties
   }
 
   const renderComponent = () => {
+    if (type === 'Table') {
+      return renderLowCodeComponent(type, properties);
+    }
     switch (type) {
       case 'Button':
         return (
